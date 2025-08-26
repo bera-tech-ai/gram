@@ -9,10 +9,13 @@ const rateLimit = require('express-rate-limit');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const path = require('path');
-const { validationResult, body } = require('express-validator');
 
 // Initialize Express app
 const app = express();
+
+// Trust proxy headers (important for rate limiting behind reverse proxies)
+app.set('trust proxy', 1); // Trust first proxy
+
 const server = http.createServer(app);
 const io = socketIo(server, {
   cors: {
@@ -143,16 +146,32 @@ const generateTokens = (userId) => {
   return { accessToken, refreshToken };
 };
 
+// Validation function
+const validateRegistration = (req) => {
+  const { username, email, password } = req.body;
+  const errors = [];
+  
+  if (!username || username.length < 3) {
+    errors.push({ msg: 'Username must be at least 3 characters' });
+  }
+  
+  if (!email || !/\S+@\S+\.\S+/.test(email)) {
+    errors.push({ msg: 'Must be a valid email' });
+  }
+  
+  if (!password || password.length < 6) {
+    errors.push({ msg: 'Password must be at least 6 characters' });
+  }
+  
+  return errors;
+};
+
 // Routes
-app.post('/api/auth/register', [
-  body('username').isLength({ min: 3 }).withMessage('Username must be at least 3 characters'),
-  body('email').isEmail().withMessage('Must be a valid email'),
-  body('password').isLength({ min: 6 }).withMessage('Password must be at least 6 characters')
-], async (req, res) => {
+app.post('/api/auth/register', async (req, res) => {
   try {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({ errors: errors.array() });
+    const errors = validateRegistration(req);
+    if (errors.length > 0) {
+      return res.status(400).json({ errors });
     }
 
     const { username, email, password } = req.body;
@@ -313,6 +332,29 @@ app.get('/api/chats/:chatId/messages', authenticateToken, async (req, res) => {
 });
 
 // Socket.IO connection handling
+io.use(async (socket, next) => {
+  try {
+    const token = socket.handshake.auth.token;
+    
+    if (!token) {
+      return next(new Error('Authentication error'));
+    }
+
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback_secret');
+    const user = await User.findById(decoded.userId).select('-password');
+    
+    if (!user) {
+      return next(new Error('Authentication error'));
+    }
+
+    socket.userId = user._id;
+    socket.user = user;
+    next();
+  } catch (error) {
+    next(new Error('Authentication error'));
+  }
+});
+
 io.on('connection', (socket) => {
   console.log('User connected:', socket.id);
 
@@ -399,8 +441,16 @@ io.on('connection', (socket) => {
     }
   });
 
-  socket.on('disconnect', () => {
+  socket.on('disconnect', async () => {
     console.log('User disconnected:', socket.id);
+    
+    // Update user's online status
+    if (socket.userId) {
+      await User.findByIdAndUpdate(socket.userId, {
+        isOnline: false,
+        lastSeen: new Date()
+      });
+    }
   });
 });
 
