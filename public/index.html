@@ -22,6 +22,7 @@
             --shadow-color: rgba(0, 0, 0, 0.2);
             --online-status: #4CAF50;
             --offline-status: #888;
+            --group-chat-bubble: #5d3a9b;
         }
 
         /* WhatsApp theme */
@@ -40,6 +41,7 @@
             --shadow-color: rgba(0, 0, 0, 0.1);
             --online-status: #25d366;
             --offline-status: #888;
+            --group-chat-bubble: #bbddfb;
         }
 
         /* Neon/Cyberpunk theme */
@@ -58,6 +60,7 @@
             --shadow-color: rgba(0, 255, 252, 0.2);
             --online-status: #00fffc;
             --offline-status: #ff2a6d;
+            --group-chat-bubble: #ff00aa;
         }
 
         * {
@@ -134,6 +137,7 @@
             font-weight: bold;
             margin-right: 10px;
             overflow: hidden;
+            cursor: pointer;
         }
 
         .user-avatar img {
@@ -168,6 +172,23 @@
             background-color: var(--input-bg);
             color: var(--text-color);
             outline: none;
+        }
+
+        .sidebar-tabs {
+            display: flex;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .sidebar-tab {
+            flex: 1;
+            text-align: center;
+            padding: 12px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .sidebar-tab.active {
+            border-bottom: 2px solid var(--primary-accent);
         }
 
         .contacts-list {
@@ -248,6 +269,19 @@
             font-size: 0.75rem;
             opacity: 0.6;
             margin-top: 5px;
+        }
+
+        .unread-count {
+            background-color: var(--primary-accent);
+            color: white;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.7rem;
+            font-weight: bold;
         }
 
         .chat-area {
@@ -355,11 +389,21 @@
             border-bottom-left-radius: 5px;
         }
 
+        .message.group {
+            background-color: var(--group-chat-bubble);
+        }
+
         .message-time {
             font-size: 0.7rem;
             opacity: 0.7;
             text-align: right;
             margin-top: 5px;
+        }
+
+        .message-sender {
+            font-size: 0.8rem;
+            font-weight: bold;
+            margin-bottom: 5px;
         }
 
         .message-input-container {
@@ -552,12 +596,27 @@
             font-size: 2rem;
             margin-bottom: 15px;
             overflow: hidden;
+            cursor: pointer;
+            position: relative;
         }
 
         .profile-avatar img {
             width: 100%;
             height: 100%;
             object-fit: cover;
+        }
+
+        .profile-avatar-edit {
+            position: absolute;
+            bottom: 0;
+            right: 0;
+            background-color: var(--primary-accent);
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
         .profile-name {
@@ -584,6 +643,13 @@
             margin-bottom: 10px;
             cursor: pointer;
             transition: background-color 0.2s;
+            display: flex;
+            align-items: center;
+        }
+
+        .settings-item i {
+            margin-right: 10px;
+            width: 20px;
         }
 
         .settings-item:hover {
@@ -629,6 +695,75 @@
             display: block;
         }
 
+        .group-create-panel {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: var(--sidebar-bg);
+            padding: 20px;
+            border-radius: 10px;
+            width: 400px;
+            z-index: 110;
+            display: none;
+        }
+
+        .group-create-panel.open {
+            display: block;
+        }
+
+        .group-create-panel h3 {
+            margin-bottom: 20px;
+            color: var(--primary-accent);
+        }
+
+        .group-members-select {
+            max-height: 200px;
+            overflow-y: auto;
+            margin: 15px 0;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 5px;
+            padding: 10px;
+        }
+
+        .group-member-item {
+            display: flex;
+            align-items: center;
+            padding: 8px;
+            border-radius: 5px;
+            margin-bottom: 5px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .group-member-item:hover {
+            background-color: rgba(255, 255, 255, 0.05);
+        }
+
+        .group-member-item.selected {
+            background-color: var(--primary-accent);
+        }
+
+        .group-create-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .typing-indicator {
+            font-size: 0.8rem;
+            font-style: italic;
+            padding: 5px 15px;
+            color: var(--primary-accent);
+        }
+
+        .message-status {
+            font-size: 0.7rem;
+            margin-top: 3px;
+            text-align: right;
+        }
+
         @media (max-width: 768px) {
             .sidebar {
                 width: 100%;
@@ -644,6 +779,10 @@
             .settings-panel {
                 width: 100%;
                 right: -100%;
+            }
+            
+            .group-create-panel {
+                width: 90%;
             }
             
             .menu-toggle {
@@ -663,6 +802,13 @@
 
         .hidden {
             display: none;
+        }
+
+        .error-message {
+            color: #ff6b6b;
+            margin-top: 10px;
+            text-align: center;
+            font-size: 0.9rem;
         }
     </style>
 </head>
@@ -688,17 +834,18 @@
         <div class="auth-form hidden" id="registerForm">
             <h2>Create Account</h2>
             <div class="form-group">
-                <label for="registerUsername">Username</label>
-                <input type="text" id="registerUsername" placeholder="Choose a username">
+                <label for="registerUsername">Username *</label>
+                <input type="text" id="registerUsername" placeholder="Choose a username" required>
             </div>
             <div class="form-group">
                 <label for="registerPhone">Phone (optional)</label>
                 <input type="text" id="registerPhone" placeholder="Your phone number">
             </div>
             <div class="form-group">
-                <label for="registerPassword">Password</label>
-                <input type="password" id="registerPassword" placeholder="Create a password">
+                <label for="registerPassword">Password *</label>
+                <input type="password" id="registerPassword" placeholder="Create a password" required>
             </div>
+            <div id="registerError" class="error-message hidden"></div>
             <button class="auth-btn" onclick="register()">Register</button>
             <div class="auth-switch">
                 Already have an account? <a onclick="showLoginForm()">Login</a>
@@ -723,7 +870,7 @@
         <div class="container">
             <div class="sidebar">
                 <div class="user-panel">
-                    <div class="user-avatar" id="userAvatar">
+                    <div class="user-avatar" id="userAvatar" onclick="openSettings()">
                         <span id="avatarInitials">U</span>
                     </div>
                     <div class="user-info">
@@ -733,10 +880,19 @@
                     <button class="chat-action-btn" onclick="openSettings()">
                         <i class="fas fa-cog"></i>
                     </button>
+                    <button class="chat-action-btn" onclick="logout()">
+                        <i class="fas fa-sign-out-alt"></i>
+                    </button>
                 </div>
 
                 <div class="search-box">
-                    <input type="text" class="search-input" placeholder="Search contacts...">
+                    <input type="text" class="search-input" placeholder="Search contacts..." id="searchContacts">
+                </div>
+
+                <div class="sidebar-tabs">
+                    <div class="sidebar-tab active" data-tab="chats">Chats</div>
+                    <div class="sidebar-tab" data-tab="contacts">Contacts</div>
+                    <div class="sidebar-tab" data-tab="groups">Groups</div>
                 </div>
 
                 <div class="contacts-list" id="contactsList">
@@ -773,14 +929,16 @@
                     </div>
                 </div>
 
+                <div class="typing-indicator hidden" id="typingIndicator"></div>
+
                 <div class="message-input-container">
-                    <button class="input-action-btn">
-                        <i class="fas fa-paperclip"></i>
-                    </button>
-                    <textarea class="message-input" id="messageInput" placeholder="Type a message..." rows="1"></textarea>
-                    <button class="input-action-btn">
+                    <button class="input-action-btn" onclick="toggleEmojiPicker()">
                         <i class="fas fa-smile"></i>
                     </button>
+                    <button class="input-action-btn" onclick="document.getElementById('fileInput').click()">
+                        <i class="fas fa-paperclip"></i>
+                    </button>
+                    <textarea class="message-input" id="messageInput" placeholder="Type a message..." rows="1" oninput="handleTyping()"></textarea>
                     <button class="send-btn" onclick="sendMessage()">
                         <i class="fas fa-paper-plane"></i>
                     </button>
@@ -800,6 +958,9 @@
             <div class="profile-info">
                 <div class="profile-avatar" id="profileAvatar">
                     <span id="profileInitials">U</span>
+                    <div class="profile-avatar-edit" onclick="document.getElementById('avatarInput').click()">
+                        <i class="fas fa-camera"></i>
+                    </div>
                 </div>
                 <div class="profile-name" id="profileName">User Name</div>
                 <div class="profile-bio" id="profileBio">This is my bio</div>
@@ -852,7 +1013,32 @@
             </div>
         </div>
 
-        <div class="overlay" id="overlay" onclick="closeSettings()"></div>
+        <!-- Group Creation Panel -->
+        <div class="group-create-panel" id="groupCreatePanel">
+            <h3>Create New Group</h3>
+            <div class="form-group">
+                <label for="groupName">Group Name</label>
+                <input type="text" id="groupName" placeholder="Enter group name">
+            </div>
+            <div class="form-group">
+                <label for="groupDescription">Group Description (optional)</label>
+                <input type="text" id="groupDescription" placeholder="Enter group description">
+            </div>
+            <label>Select Members</label>
+            <div class="group-members-select" id="groupMembersList">
+                <!-- Members will be populated here -->
+            </div>
+            <div class="group-create-actions">
+                <button class="auth-btn" style="background-color: var(--received-bubble);" onclick="closeGroupPanel()">Cancel</button>
+                <button class="auth-btn" onclick="createGroup()">Create Group</button>
+            </div>
+        </div>
+
+        <div class="overlay" id="overlay" onclick="closePanels()"></div>
+
+        <!-- Hidden file inputs -->
+        <input type="file" id="avatarInput" accept="image/*" style="display: none;" onchange="uploadAvatar()">
+        <input type="file" id="fileInput" accept="image/*, .pdf, .doc, .docx" style="display: none;" onchange="handleFileUpload()">
     </div>
 
     <script src="/socket.io/socket.io.js"></script>
@@ -867,6 +1053,8 @@
         const messagesContainer = document.getElementById('messagesContainer');
         const messageInput = document.getElementById('messageInput');
         const settingsPanel = document.getElementById('settingsPanel');
+        const groupCreatePanel = document.getElementById('groupCreatePanel');
+        const groupMembersList = document.getElementById('groupMembersList');
         const overlay = document.getElementById('overlay');
         const userAvatar = document.getElementById('userAvatar');
         const userName = document.getElementById('userName');
@@ -878,13 +1066,21 @@
         const profileName = document.getElementById('profileName');
         const profileBio = document.getElementById('profileBio');
         const profileStatus = document.getElementById('profileStatus');
+        const typingIndicator = document.getElementById('typingIndicator');
+        const searchContacts = document.getElementById('searchContacts');
+        const sidebarTabs = document.querySelectorAll('.sidebar-tab');
 
         // Global variables
         let socket;
         let currentUser = null;
         let currentContact = null;
+        let currentChatType = 'individual'; // 'individual' or 'group'
         let contacts = [];
+        let groups = [];
         let messages = {};
+        let groupMessages = {};
+        let typingTimeout = null;
+        let selectedMembers = new Set();
 
         // Initialize the application
         function init() {
@@ -909,6 +1105,7 @@
                     showChatInterface();
                     connectSocket();
                     loadContacts();
+                    loadGroups();
                     updateProfileInfo();
                 })
                 .catch(error => {
@@ -923,7 +1120,15 @@
             // Theme selector event listener
             themeSelector.addEventListener('change', (e) => {
                 document.body.setAttribute('data-theme', e.target.value);
+                localStorage.setItem('theme', e.target.value);
             });
+
+            // Load saved theme
+            const savedTheme = localStorage.getItem('theme');
+            if (savedTheme) {
+                document.body.setAttribute('data-theme', savedTheme);
+                themeSelector.value = savedTheme;
+            }
 
             // Message input auto-resize
             messageInput.addEventListener('input', function() {
@@ -936,6 +1141,45 @@
                 if (e.key === 'Enter' && !e.shiftKey) {
                     e.preventDefault();
                     sendMessage();
+                }
+            });
+
+            // Search contacts
+            searchContacts.addEventListener('input', filterContacts);
+
+            // Sidebar tabs
+            sidebarTabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    const tabName = tab.getAttribute('data-tab');
+                    sidebarTabs.forEach(t => t.classList.remove('active'));
+                    tab.classList.add('active');
+                    switchTab(tabName);
+                });
+            });
+        }
+
+        // Switch between tabs
+        function switchTab(tabName) {
+            if (tabName === 'chats') {
+                loadContacts();
+            } else if (tabName === 'contacts') {
+                loadUsers();
+            } else if (tabName === 'groups') {
+                loadGroups();
+            }
+        }
+
+        // Filter contacts based on search input
+        function filterContacts() {
+            const searchTerm = searchContacts.value.toLowerCase();
+            const contactElements = contactsList.querySelectorAll('.contact, .group-item');
+            
+            contactElements.forEach(element => {
+                const name = element.querySelector('.contact-name').textContent.toLowerCase();
+                if (name.includes(searchTerm)) {
+                    element.style.display = 'flex';
+                } else {
+                    element.style.display = 'none';
                 }
             });
         }
@@ -954,16 +1198,34 @@
         function showLoginForm() {
             loginForm.classList.remove('hidden');
             registerForm.classList.add('hidden');
+            hideError();
         }
 
         function showRegisterForm() {
             loginForm.classList.add('hidden');
             registerForm.classList.remove('hidden');
+            hideError();
+        }
+
+        function showError(message) {
+            const errorEl = document.getElementById('registerError');
+            errorEl.textContent = message;
+            errorEl.classList.remove('hidden');
+        }
+
+        function hideError() {
+            const errorEl = document.getElementById('registerError');
+            errorEl.classList.add('hidden');
         }
 
         function login() {
             const username = document.getElementById('loginUsername').value;
             const password = document.getElementById('loginPassword').value;
+
+            if (!username || !password) {
+                alert('Please enter both username and password');
+                return;
+            }
 
             fetch('/api/login', {
                 method: 'POST',
@@ -992,9 +1254,17 @@
         }
 
         function register() {
+            hideError();
+            
             const username = document.getElementById('registerUsername').value;
             const phone = document.getElementById('registerPhone').value;
             const password = document.getElementById('registerPassword').value;
+
+            // Basic validation
+            if (!username || !password) {
+                showError('Username and password are required');
+                return;
+            }
 
             fetch('/api/register', {
                 method: 'POST',
@@ -1013,12 +1283,31 @@
                     loadContacts();
                     updateProfileInfo();
                 } else {
-                    alert('Registration failed: ' + data.error);
+                    showError('Registration failed: ' + data.error);
                 }
             })
             .catch(error => {
                 console.error('Registration error:', error);
-                alert('Registration failed. Please try again.');
+                showError('Registration failed. Please try again.');
+            });
+        }
+
+        function logout() {
+            fetch('/api/logout', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                }
+            })
+            .then(() => {
+                localStorage.removeItem('token');
+                if (socket) socket.disconnect();
+                showAuthScreen();
+            })
+            .catch(error => {
+                console.error('Logout error:', error);
+                localStorage.removeItem('token');
+                showAuthScreen();
             });
         }
 
@@ -1037,9 +1326,26 @@
                 updateContactLastMessage(message);
             });
 
+            socket.on('receiveGroupMessage', (message) => {
+                addGroupMessageToUI(message, false);
+                // Update group list with last message
+                updateGroupLastMessage(message);
+            });
+
             socket.on('messageSent', (message) => {
                 // Message was successfully sent and saved
                 addMessageToUI(message, true);
+            });
+
+            socket.on('groupMessageSent', (message) => {
+                // Group message was successfully sent and saved
+                addGroupMessageToUI(message, true);
+            });
+
+            socket.on('userTyping', (data) => {
+                if (data.senderId === currentContact?._id) {
+                    showTypingIndicator(data.isTyping);
+                }
             });
 
             socket.on('error', (error) => {
@@ -1065,6 +1371,37 @@
             });
         }
 
+        function loadUsers() {
+            fetch('/api/users', {
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                }
+            })
+            .then(response => response.json())
+            .then(users => {
+                renderUsers(users);
+            })
+            .catch(error => {
+                console.error('Failed to load users:', error);
+            });
+        }
+
+        function loadGroups() {
+            fetch('/api/groups', {
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                }
+            })
+            .then(response => response.json())
+            .then(groupsData => {
+                groups = groupsData;
+                renderGroups(groupsData);
+            })
+            .catch(error => {
+                console.error('Failed to load groups:', error);
+            });
+        }
+
         function renderContacts(contacts) {
             contactsList.innerHTML = '';
             
@@ -1072,36 +1409,154 @@
                 const contactEl = document.createElement('div');
                 contactEl.className = 'contact';
                 contactEl.dataset.id = contact._id;
+                contactEl.dataset.type = 'individual';
                 
                 // Generate initials for avatar
                 const initials = contact.profile.firstName && contact.profile.lastName 
                     ? `${contact.profile.firstName[0]}${contact.profile.lastName[0]}` 
                     : contact.username[0].toUpperCase();
                 
+                const statusClass = contact.isOnline ? '' : 'offline';
+                const statusText = contact.isOnline ? 'Online' : formatLastSeen(contact.profile.lastSeen);
+                
                 contactEl.innerHTML = `
-                    <div class="contact-avatar">
-                        <span>${initials}</span>
+                    <div class="contact-avatar ${statusClass}">
+                        ${contact.profile.avatar ? `<img src="${contact.profile.avatar}" alt="${contact.username}">` : `<span>${initials}</span>`}
                         <div class="online-indicator"></div>
                     </div>
                     <div class="contact-info">
                         <div class="contact-name">${contact.username}</div>
                         <div class="contact-preview">Start a conversation</div>
-                        <div class="contact-time">Just now</div>
+                        <div class="contact-time">${statusText}</div>
                     </div>
+                    <div class="unread-count hidden">0</div>
                 `;
                 
                 contactEl.addEventListener('click', () => selectContact(contact));
                 contactsList.appendChild(contactEl);
             });
+
+            // Add create group button
+            const createGroupEl = document.createElement('div');
+            createGroupEl.className = 'contact';
+            createGroupEl.innerHTML = `
+                <div class="contact-avatar" style="background-color: var(--group-chat-bubble);">
+                    <i class="fas fa-users"></i>
+                </div>
+                <div class="contact-info">
+                    <div class="contact-name">New Group</div>
+                    <div class="contact-preview">Create a group chat</div>
+                </div>
+            `;
+            createGroupEl.addEventListener('click', openGroupPanel);
+            contactsList.appendChild(createGroupEl);
+        }
+
+        function renderUsers(users) {
+            contactsList.innerHTML = '';
+            
+            users.forEach(user => {
+                const userEl = document.createElement('div');
+                userEl.className = 'contact';
+                userEl.dataset.id = user._id;
+                
+                // Generate initials for avatar
+                const initials = user.profile.firstName && user.profile.lastName 
+                    ? `${user.profile.firstName[0]}${user.profile.lastName[0]}` 
+                    : user.username[0].toUpperCase();
+                
+                const statusClass = user.isOnline ? '' : 'offline';
+                const statusText = user.isOnline ? 'Online' : formatLastSeen(user.profile.lastSeen);
+                
+                userEl.innerHTML = `
+                    <div class="contact-avatar ${statusClass}">
+                        ${user.profile.avatar ? `<img src="${user.profile.avatar}" alt="${user.username}">` : `<span>${initials}</span>`}
+                        <div class="online-indicator"></div>
+                    </div>
+                    <div class="contact-info">
+                        <div class="contact-name">${user.username}</div>
+                        <div class="contact-preview">${user.profile.bio || 'No bio'}</div>
+                        <div class="contact-time">${statusText}</div>
+                    </div>
+                `;
+                
+                userEl.addEventListener('click', () => {
+                    selectContact(user);
+                    // Switch back to chats tab
+                    sidebarTabs.forEach(t => t.classList.remove('active'));
+                    document.querySelector('[data-tab="chats"]').classList.add('active');
+                });
+                contactsList.appendChild(userEl);
+            });
+        }
+
+        function renderGroups(groups) {
+            contactsList.innerHTML = '';
+            
+            groups.forEach(group => {
+                const groupEl = document.createElement('div');
+                groupEl.className = 'contact';
+                groupEl.dataset.id = group._id;
+                groupEl.dataset.type = 'group';
+                
+                groupEl.innerHTML = `
+                    <div class="contact-avatar" style="background-color: var(--group-chat-bubble);">
+                        <i class="fas fa-users"></i>
+                    </div>
+                    <div class="contact-info">
+                        <div class="contact-name">${group.name}</div>
+                        <div class="contact-preview">${group.description || 'Group chat'}</div>
+                        <div class="contact-time">${group.members.length} members</div>
+                    </div>
+                    <div class="unread-count hidden">0</div>
+                `;
+                
+                groupEl.addEventListener('click', () => selectGroup(group));
+                contactsList.appendChild(groupEl);
+            });
+
+            // Add create group button
+            const createGroupEl = document.createElement('div');
+            createGroupEl.className = 'contact';
+            createGroupEl.innerHTML = `
+                <div class="contact-avatar" style="background-color: var(--group-chat-bubble);">
+                    <i class="fas fa-plus"></i>
+                </div>
+                <div class="contact-info">
+                    <div class="contact-name">New Group</div>
+                    <div class="contact-preview">Create a group chat</div>
+                </div>
+            `;
+            createGroupEl.addEventListener('click', openGroupPanel);
+            contactsList.appendChild(createGroupEl);
+        }
+
+        function formatLastSeen(dateString) {
+            if (!dateString) return 'Long time ago';
+            
+            const date = new Date(dateString);
+            const now = new Date();
+            const diffMs = now - date;
+            const diffMins = Math.round(diffMs / (1000 * 60));
+            const diffHours = Math.round(diffMs / (1000 * 60 * 60));
+            const diffDays = Math.round(diffMs / (1000 * 60 * 60 * 24));
+            
+            if (diffMins < 1) return 'Just now';
+            if (diffMins < 60) return `${diffMins} min ago`;
+            if (diffHours < 24) return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
+            if (diffDays < 7) return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
+            
+            return date.toLocaleDateString();
         }
 
         function selectContact(contact) {
             currentContact = contact;
+            currentChatType = 'individual';
             
             // Update UI
             document.querySelectorAll('.contact').forEach(el => {
                 el.classList.remove('active');
-                if (el.dataset.id === contact._id) {
+                if (el.dataset.id === contact._id && el.dataset.type === 'individual') {
                     el.classList.add('active');
                 }
             });
@@ -1111,12 +1566,41 @@
                 ? `${contact.profile.firstName[0]}${contact.profile.lastName[0]}` 
                 : contact.username[0].toUpperCase();
             
-            currentContactAvatar.innerHTML = `<span>${initials}</span>`;
+            currentContactAvatar.innerHTML = contact.profile.avatar 
+                ? `<img src="${contact.profile.avatar}" alt="${contact.username}">` 
+                : `<span>${initials}</span>`;
             currentContactName.textContent = contact.username;
-            currentContactStatus.textContent = 'Online';
+            currentContactStatus.textContent = contact.isOnline ? 'Online' : formatLastSeen(contact.profile.lastSeen);
             
             // Load messages
             loadMessages(contact._id);
+
+            // Mark messages as read
+            markMessagesAsRead(contact._id);
+        }
+
+        function selectGroup(group) {
+            currentContact = group;
+            currentChatType = 'group';
+            
+            // Update UI
+            document.querySelectorAll('.contact').forEach(el => {
+                el.classList.remove('active');
+                if (el.dataset.id === group._id && el.dataset.type === 'group') {
+                    el.classList.add('active');
+                }
+            });
+            
+            currentContactAvatar.innerHTML = `
+                <div style="background-color: var(--group-chat-bubble); width: 100%; height: 100%; display: flex; align-items: center; justify-content: center;">
+                    <i class="fas fa-users"></i>
+                </div>
+            `;
+            currentContactName.textContent = group.name;
+            currentContactStatus.textContent = `${group.members.length} members`;
+            
+            // Load group messages
+            loadGroupMessages(group._id);
         }
 
         function loadMessages(contactId) {
@@ -1131,6 +1615,33 @@
             })
             .catch(error => {
                 console.error('Failed to load messages:', error);
+            });
+        }
+
+        function loadGroupMessages(groupId) {
+            fetch(`/api/groups/${groupId}/messages`, {
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                }
+            })
+            .then(response => response.json())
+            .then(messages => {
+                renderGroupMessages(messages);
+            })
+            .catch(error => {
+                console.error('Failed to load group messages:', error);
+            });
+        }
+
+        function markMessagesAsRead(contactId) {
+            fetch(`/api/messages/read/${contactId}`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                }
+            })
+            .catch(error => {
+                console.error('Failed to mark messages as read:', error);
             });
         }
 
@@ -1155,14 +1666,68 @@
             messagesContainer.scrollTop = messagesContainer.scrollHeight;
         }
 
+        function renderGroupMessages(messages) {
+            messagesContainer.innerHTML = '';
+            
+            if (messages.length === 0) {
+                messagesContainer.innerHTML = `
+                    <div class="welcome-message">
+                        <p>No messages yet in this group. Start a conversation!</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            messages.forEach(message => {
+                const isSent = message.sender._id === currentUser.id;
+                addGroupMessageToUI(message, isSent);
+            });
+            
+            // Scroll to bottom
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+
         function addMessageToUI(message, isSent) {
             const messageEl = document.createElement('div');
             messageEl.className = `message ${isSent ? 'sent' : 'received'}`;
             
             const time = new Date(message.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
             
+            let content = message.content;
+            if (message.type === 'image') {
+                content = `<img src="${message.fileUrl}" style="max-width: 100%; border-radius: 8px;" alt="Shared image">`;
+            } else if (message.type === 'file') {
+                content = `<div><i class="fas fa-file"></i> ${message.fileName || 'File'}</div>`;
+            }
+            
             messageEl.innerHTML = `
-                <div class="message-content">${message.content}</div>
+                <div class="message-content">${content}</div>
+                <div class="message-time">${time}</div>
+                ${isSent ? '<div class="message-status">' + (message.read ? 'Read' : 'Sent') + '</div>' : ''}
+            `;
+            
+            messagesContainer.appendChild(messageEl);
+            
+            // Scroll to bottom
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+
+        function addGroupMessageToUI(message, isSent) {
+            const messageEl = document.createElement('div');
+            messageEl.className = `message ${isSent ? 'sent' : 'received'} group`;
+            
+            const time = new Date(message.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            
+            let content = message.content;
+            if (message.type === 'image') {
+                content = `<img src="${message.fileUrl}" style="max-width: 100%; border-radius: 8px;" alt="Shared image">`;
+            } else if (message.type === 'file') {
+                content = `<div><i class="fas fa-file"></i> ${message.fileName || 'File'}</div>`;
+            }
+            
+            messageEl.innerHTML = `
+                ${!isSent ? `<div class="message-sender">${message.sender.username}</div>` : ''}
+                <div class="message-content">${content}</div>
                 <div class="message-time">${time}</div>
             `;
             
@@ -1177,24 +1742,116 @@
             
             const content = messageInput.value.trim();
             
-            socket.emit('sendMessage', {
-                senderId: currentUser.id,
-                receiverId: currentContact._id,
-                content
-            });
+            if (currentChatType === 'individual') {
+                socket.emit('sendMessage', {
+                    senderId: currentUser.id,
+                    receiverId: currentContact._id,
+                    content,
+                    type: 'text'
+                });
+            } else {
+                socket.emit('sendGroupMessage', {
+                    groupId: currentContact._id,
+                    senderId: currentUser.id,
+                    content,
+                    type: 'text'
+                });
+            }
             
             // Clear input
             messageInput.value = '';
             messageInput.style.height = 'auto';
+            
+            // Reset typing indicator
+            if (typingTimeout) {
+                clearTimeout(typingTimeout);
+                typingTimeout = null;
+            }
+            socket.emit('typing', {
+                senderId: currentUser.id,
+                receiverId: currentContact._id,
+                isTyping: false
+            });
+        }
+
+        function handleTyping() {
+            if (!currentContact || currentChatType !== 'individual') return;
+            
+            // Emit typing event
+            socket.emit('typing', {
+                senderId: currentUser.id,
+                receiverId: currentContact._id,
+                isTyping: true
+            });
+            
+            // Set timeout to stop typing indicator
+            if (typingTimeout) {
+                clearTimeout(typingTimeout);
+            }
+            
+            typingTimeout = setTimeout(() => {
+                socket.emit('typing', {
+                    senderId: currentUser.id,
+                    receiverId: currentContact._id,
+                    isTyping: false
+                });
+                typingTimeout = null;
+            }, 1000);
+        }
+
+        function showTypingIndicator(isTyping) {
+            if (isTyping) {
+                typingIndicator.textContent = `${currentContact.username} is typing...`;
+                typingIndicator.classList.remove('hidden');
+            } else {
+                typingIndicator.classList.add('hidden');
+            }
+        }
+
+        function handleFileUpload() {
+            const fileInput = document.getElementById('fileInput');
+            const file = fileInput.files[0];
+            
+            if (!file) return;
+            
+            // For now, we'll just send a text message about the file
+            // In a real app, you would upload the file to a server first
+            const fileName = file.name;
+            messageInput.value = `File: ${fileName}`;
+            
+            // You would typically:
+            // 1. Upload the file to your server
+            // 2. Get the file URL
+            // 3. Send a message with type: 'file' and the file URL
         }
 
         function updateContactLastMessage(message) {
-            const contactEl = document.querySelector(`.contact[data-id="${message.sender._id}"]`);
+            const contactEl = document.querySelector(`.contact[data-id="${message.sender._id}"][data-type="individual"]`);
             if (contactEl) {
                 const preview = contactEl.querySelector('.contact-preview');
                 const time = contactEl.querySelector('.contact-time');
                 
                 preview.textContent = message.content;
+                time.textContent = new Date(message.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                
+                // Show unread count if message is from someone else and not read
+                if (message.sender._id !== currentUser.id && !message.read) {
+                    const unreadCountEl = contactEl.querySelector('.unread-count');
+                    let count = parseInt(unreadCountEl.textContent || '0');
+                    count++;
+                    unreadCountEl.textContent = count;
+                    unreadCountEl.classList.remove('hidden');
+                }
+            }
+        }
+
+        function updateGroupLastMessage(message) {
+            const groupEl = document.querySelector(`.contact[data-id="${message.group}"][data-type="group"]`);
+            if (groupEl) {
+                const preview = groupEl.querySelector('.contact-preview');
+                const time = groupEl.querySelector('.contact-time');
+                
+                preview.textContent = `${message.sender.username}: ${message.content}`;
                 time.textContent = new Date(message.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
             }
         }
@@ -1210,6 +1867,11 @@
             overlay.classList.remove('active');
         }
 
+        function closePanels() {
+            closeSettings();
+            closeGroupPanel();
+        }
+
         function updateProfileInfo() {
             if (!currentUser) return;
             
@@ -1219,15 +1881,33 @@
                 : currentUser.username[0].toUpperCase();
             
             // Update user panel
-            userAvatar.innerHTML = `<span>${initials}</span>`;
+            if (currentUser.profile.avatar) {
+                userAvatar.innerHTML = `<img src="${currentUser.profile.avatar}" alt="${currentUser.username}">`;
+            } else {
+                userAvatar.innerHTML = `<span>${initials}</span>`;
+            }
             userName.textContent = currentUser.username;
-            userStatus.textContent = 'Online';
+            userStatus.textContent = currentUser.isOnline ? 'Online' : 'Offline';
             
             // Update profile in settings
-            profileAvatar.innerHTML = `<span>${initials}</span>`;
+            if (currentUser.profile.avatar) {
+                profileAvatar.innerHTML = `
+                    <img src="${currentUser.profile.avatar}" alt="${currentUser.username}">
+                    <div class="profile-avatar-edit" onclick="document.getElementById('avatarInput').click()">
+                        <i class="fas fa-camera"></i>
+                    </div>
+                `;
+            } else {
+                profileAvatar.innerHTML = `
+                    <span>${initials}</span>
+                    <div class="profile-avatar-edit" onclick="document.getElementById('avatarInput').click()">
+                        <i class="fas fa-camera"></i>
+                    </div>
+                `;
+            }
             profileName.textContent = currentUser.username;
             profileBio.textContent = currentUser.profile.bio || 'No bio set';
-            profileStatus.textContent = 'Online';
+            profileStatus.textContent = currentUser.isOnline ? 'Online' : `Last seen ${formatLastSeen(currentUser.profile.lastSeen)}`;
         }
 
         function editProfile() {
@@ -1261,8 +1941,147 @@
             }
         }
 
+        function uploadAvatar() {
+            const fileInput = document.getElementById('avatarInput');
+            const file = fileInput.files[0];
+            
+            if (!file) return;
+            
+            const formData = new FormData();
+            formData.append('avatar', file);
+            
+            fetch('/api/user/avatar', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                },
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.avatar) {
+                    currentUser.profile.avatar = data.avatar;
+                    updateProfileInfo();
+                    alert('Avatar updated successfully');
+                } else {
+                    alert('Failed to update avatar: ' + data.error);
+                }
+            })
+            .catch(error => {
+                console.error('Avatar upload error:', error);
+                alert('Failed to update avatar');
+            });
+        }
+
+        // Group functions
+        function openGroupPanel() {
+            groupCreatePanel.classList.add('open');
+            overlay.classList.add('active');
+            
+            // Load users for group creation
+            fetch('/api/users', {
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                }
+            })
+            .then(response => response.json())
+            .then(users => {
+                renderGroupMembers(users);
+            })
+            .catch(error => {
+                console.error('Failed to load users for group:', error);
+            });
+        }
+
+        function closeGroupPanel() {
+            groupCreatePanel.classList.remove('open');
+            overlay.classList.remove('active');
+            selectedMembers.clear();
+        }
+
+        function renderGroupMembers(users) {
+            groupMembersList.innerHTML = '';
+            
+            users.forEach(user => {
+                if (user._id === currentUser.id) return; // Skip current user
+                
+                const memberEl = document.createElement('div');
+                memberEl.className = 'group-member-item';
+                memberEl.dataset.id = user._id;
+                
+                // Generate initials for avatar
+                const initials = user.profile.firstName && user.profile.lastName 
+                    ? `${user.profile.firstName[0]}${user.profile.lastName[0]}` 
+                    : user.username[0].toUpperCase();
+                
+                memberEl.innerHTML = `
+                    <div class="contact-avatar">
+                        ${user.profile.avatar ? `<img src="${user.profile.avatar}" alt="${user.username}">` : `<span>${initials}</span>`}
+                    </div>
+                    <div class="contact-name">${user.username}</div>
+                `;
+                
+                memberEl.addEventListener('click', () => {
+                    memberEl.classList.toggle('selected');
+                    if (memberEl.classList.contains('selected')) {
+                        selectedMembers.add(user._id);
+                    } else {
+                        selectedMembers.delete(user._id);
+                    }
+                });
+                
+                groupMembersList.appendChild(memberEl);
+            });
+        }
+
+        function createGroup() {
+            const groupName = document.getElementById('groupName').value;
+            const groupDescription = document.getElementById('groupDescription').value;
+            
+            if (!groupName) {
+                alert('Please enter a group name');
+                return;
+            }
+            
+            if (selectedMembers.size === 0) {
+                alert('Please select at least one member');
+                return;
+            }
+            
+            const members = Array.from(selectedMembers);
+            
+            fetch('/api/groups', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                },
+                body: JSON.stringify({ 
+                    name: groupName, 
+                    description: groupDescription,
+                    members 
+                })
+            })
+            .then(response => response.json())
+            .then(group => {
+                groups.push(group);
+                renderGroups(groups);
+                closeGroupPanel();
+                alert('Group created successfully');
+            })
+            .catch(error => {
+                console.error('Group creation error:', error);
+                alert('Failed to create group');
+            });
+        }
+
         function toggleSidebar() {
             document.querySelector('.sidebar').classList.toggle('active');
+        }
+
+        function toggleEmojiPicker() {
+            // This would open an emoji picker in a real app
+            alert('Emoji picker would open here');
         }
 
         // Initialize the app when the page loads
