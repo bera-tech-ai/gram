@@ -2,357 +2,286 @@ const express = require('express');
 const http = require('http');
 const socketIo = require('socket.io');
 const mongoose = require('mongoose');
-const path = require('path');
 const bcrypt = require('bcryptjs');
-const session = require('express-session');
+const cors = require('cors');
 require('dotenv').config();
 
 const app = express();
 const server = http.createServer(app);
-const io = socketIo(server);
+const io = socketIo(server, {
+  cors: {
+    origin: "*",
+    methods: ["GET", "POST"]
+  }
+});
 
 // Middleware
+app.use(cors());
 app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-app.use(express.static(path.join(__dirname, 'public')));
-app.use(session({
-  secret: 'gram_x_secret_key',
-  resave: false,
-  saveUninitialized: false,
-  cookie: { secure: false, maxAge: 24 * 60 * 60 * 1000 } // 24 hours
-}));
+app.use(express.static('public'));
 
-// MongoDB connection
-mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/gram_x', {
+// MongoDB Connection
+const MONGODB_URI = process.env.MONGODB_URI || 'mongodb+srv://ellyongiro8:QwXDXE6tyrGpUTNb@cluster0.tyxcmm9.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0';
+mongoose.connect(MONGODB_URI, {
   useNewUrlParser: true,
   useUnifiedTopology: true
 })
 .then(() => console.log('Connected to MongoDB'))
 .catch(err => console.error('MongoDB connection error:', err));
 
-// User schema
+// User Schema
 const userSchema = new mongoose.Schema({
   username: { type: String, required: true, unique: true },
+  email: { type: String, required: true, unique: true },
   password: { type: String, required: true },
-  profile: {
-    firstName: String,
-    lastName: String,
-    bio: String,
-    avatar: { type: String, default: 'https://i.imgur.com/hwklZjP.jpeg' },
-    lastSeen: { type: Date, default: Date.now }
-  }
-}, { timestamps: true });
+  avatar: { type: String, default: 'https://i.imgur.com/3Q6ZQ0u.jpeg' },
+  status: { type: String, default: 'Online' },
+  lastSeen: { type: Date, default: Date.now }
+});
 
-// Message schema
+// Message Schema
 const messageSchema = new mongoose.Schema({
   sender: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
-  receiver: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
-  text: { type: String, required: true },
-  room: { type: String, default: 'general' },
-  isRead: { type: Boolean, default: false }
-}, { timestamps: true });
+  receiver: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+  content: { type: String, required: true },
+  timestamp: { type: Date, default: Date.now },
+  read: { type: Boolean, default: false }
+});
 
+// Models
 const User = mongoose.model('User', userSchema);
 const Message = mongoose.model('Message', messageSchema);
 
-// Authentication middleware
-function requireAuth(req, res, next) {
-  if (req.session.userId) {
-    next();
-  } else {
-    res.status(401).json({ error: 'Authentication required' });
-  }
-}
-
-// API Routes
-
-// Register new user
+// Authentication routes
 app.post('/api/register', async (req, res) => {
   try {
-    const { username, password, firstName, lastName } = req.body;
+    const { username, email, password } = req.body;
     
     // Check if user already exists
-    const existingUser = await User.findOne({ username });
+    const existingUser = await User.findOne({ $or: [{ email }, { username }] });
     if (existingUser) {
-      return res.status(400).json({ error: 'Username already exists' });
+      return res.status(400).json({ message: 'User already exists' });
     }
     
     // Hash password
-    const hashedPassword = await bcrypt.hash(password, 12);
+    const hashedPassword = await bcrypt.hash(password, 10);
     
     // Create user
     const user = new User({
       username,
-      password: hashedPassword,
-      profile: { firstName, lastName }
+      email,
+      password: hashedPassword
     });
     
     await user.save();
     
-    // Set session
-    req.session.userId = user._id;
-    req.session.username = user.username;
-    
-    res.json({ 
-      message: 'User created successfully', 
-      user: { 
-        id: user._id, 
-        username: user.username, 
-        profile: user.profile 
-      } 
-    });
+    res.status(201).json({ message: 'User created successfully' });
   } catch (error) {
-    res.status(500).json({ error: 'Failed to create user' });
+    res.status(500).json({ message: 'Server error', error: error.message });
   }
 });
 
-// Login user
 app.post('/api/login', async (req, res) => {
   try {
-    const { username, password } = req.body;
+    const { emailOrUsername, password } = req.body;
     
-    // Find user
-    const user = await User.findOne({ username });
+    // Find user by email or username
+    const user = await User.findOne({
+      $or: [{ email: emailOrUsername }, { username: emailOrUsername }]
+    });
+    
     if (!user) {
-      return res.status(400).json({ error: 'Invalid credentials' });
+      return res.status(400).json({ message: 'Invalid credentials' });
     }
     
     // Check password
-    const isValidPassword = await bcrypt.compare(password, user.password);
-    if (!isValidPassword) {
-      return res.status(400).json({ error: 'Invalid credentials' });
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) {
+      return res.status(400).json({ message: 'Invalid credentials' });
     }
     
-    // Update last seen
-    user.profile.lastSeen = new Date();
+    // Update user status
+    user.status = 'Online';
+    user.lastSeen = new Date();
     await user.save();
-    
-    // Set session
-    req.session.userId = user._id;
-    req.session.username = user.username;
     
     res.json({ 
       message: 'Login successful', 
-      user: { 
-        id: user._id, 
-        username: user.username, 
-        profile: user.profile 
-      } 
+      user: {
+        id: user._id,
+        username: user.username,
+        email: user.email,
+        avatar: user.avatar,
+        status: user.status
+      }
     });
   } catch (error) {
-    res.status(500).json({ error: 'Failed to login' });
+    res.status(500).json({ message: 'Server error', error: error.message });
   }
 });
 
-// Logout user
-app.post('/api/logout', (req, res) => {
-  req.session.destroy();
-  res.json({ message: 'Logout successful' });
-});
-
-// Get current user
-app.get('/api/user', requireAuth, async (req, res) => {
-  try {
-    const user = await User.findById(req.session.userId);
-    res.json({ 
-      id: user._id, 
-      username: user.username, 
-      profile: user.profile 
-    });
-  } catch (error) {
-    res.status(500).json({ error: 'Failed to fetch user' });
-  }
-});
-
-// Get all users
-app.get('/api/users', requireAuth, async (req, res) => {
-  try {
-    const users = await User.find({ _id: { $ne: req.session.userId } })
-      .select('username profile');
-    res.json(users);
-  } catch (error) {
-    res.status(500).json({ error: 'Failed to fetch users' });
-  }
-});
-
-// Update user profile
-app.put('/api/user/profile', requireAuth, async (req, res) => {
-  try {
-    const { firstName, lastName, bio, avatar } = req.body;
-    
-    const user = await User.findById(req.session.userId);
-    if (!user) {
-      return res.status(404).json({ error: 'User not found' });
-    }
-    
-    user.profile = { 
-      ...user.profile, 
-      firstName, 
-      lastName, 
-      bio, 
-      avatar: avatar || user.profile.avatar 
-    };
-    
-    await user.save();
-    
-    res.json({ 
-      message: 'Profile updated successfully', 
-      profile: user.profile 
-    });
-  } catch (error) {
-    res.status(500).json({ error: 'Failed to update profile' });
-  }
-});
-
-// Get messages for a conversation
-app.get('/api/messages/:userId', requireAuth, async (req, res) => {
-  try {
-    const { userId } = req.params;
-    
-    const messages = await Message.find({
-      $or: [
-        { sender: req.session.userId, receiver: userId },
-        { sender: userId, receiver: req.session.userId }
-      ]
-    })
-    .populate('sender', 'username profile')
-    .populate('receiver', 'username profile')
-    .sort({ createdAt: 1 });
-    
-    res.json(messages);
-  } catch (error) {
-    res.status(500).json({ error: 'Failed to fetch messages' });
-  }
-});
-
-// Get group messages
-app.get('/api/messages/group/:room', requireAuth, async (req, res) => {
-  try {
-    const { room } = req.params;
-    
-    const messages = await Message.find({ room })
-      .populate('sender', 'username profile')
-      .sort({ createdAt: 1 });
-    
-    res.json(messages);
-  } catch (error) {
-    res.status(500).json({ error: 'Failed to fetch messages' });
-  }
-});
-
-// Serve the main application
-app.get('/', (req, res) => {
-  if (req.session.userId) {
-    res.sendFile(path.join(__dirname, 'public', 'index.html'));
-  } else {
-    res.sendFile(path.join(__dirname, 'public', 'login.html'));
-  }
-});
-
-// Socket.io connection handling
+// Socket.io for real-time messaging
 io.on('connection', (socket) => {
   console.log('User connected:', socket.id);
   
-  // Join user's personal room
-  socket.on('join user', (userId) => {
+  // Join user to their room
+  socket.on('join', (userId) => {
     socket.join(userId);
     console.log(`User ${userId} joined their room`);
   });
   
-  // Join a conversation
-  socket.on('join conversation', (data) => {
-    if (data.userId) {
-      socket.join(data.userId);
-    } else if (data.room) {
-      socket.join(data.room);
-    }
-  });
-  
-  // Handle private messages
-  socket.on('private message', async (data) => {
+  // Handle sending messages
+  socket.on('sendMessage', async (data) => {
     try {
+      const { senderId, receiverId, content } = data;
+      
+      // Save message to database
       const message = new Message({
-        sender: data.senderId,
-        receiver: data.receiverId,
-        text: data.text
+        sender: senderId,
+        receiver: receiverId,
+        content
       });
       
       await message.save();
       
       // Populate sender info
-      await message.populate('sender', 'username profile');
+      await message.populate('sender', 'username avatar');
       
-      // Send to both sender and receiver
-      io.to(data.senderId).emit('new private message', message);
-      io.to(data.receiverId).emit('new private message', message);
+      // Emit to receiver
+      socket.to(receiverId).emit('receiveMessage', message);
+      
+      // Also emit to sender for confirmation
+      socket.emit('messageSent', message);
     } catch (error) {
-      console.error('Error saving private message:', error);
-    }
-  });
-  
-  // Handle group messages
-  socket.on('group message', async (data) => {
-    try {
-      const message = new Message({
-        sender: data.senderId,
-        text: data.text,
-        room: data.room
-      });
-      
-      await message.save();
-      
-      // Populate sender info
-      await message.populate('sender', 'username profile');
-      
-      // Send to everyone in the room
-      io.to(data.room).emit('new group message', message);
-    } catch (error) {
-      console.error('Error saving group message:', error);
+      console.error('Error sending message:', error);
+      socket.emit('error', { message: 'Failed to send message' });
     }
   });
   
   // Handle typing indicators
   socket.on('typing', (data) => {
-    if (data.conversationType === 'private') {
-      socket.to(data.receiverId).emit('user typing', {
-        userId: data.senderId,
-        isTyping: data.isTyping
-      });
-    } else {
-      socket.to(data.room).emit('user typing', {
-        userId: data.senderId,
-        isTyping: data.isTyping
-      });
-    }
+    socket.to(data.receiverId).emit('userTyping', {
+      senderId: data.senderId,
+      isTyping: data.isTyping
+    });
   });
   
-  // Handle message read status
-  socket.on('mark as read', async (data) => {
+  // Handle message read receipts
+  socket.on('markAsRead', async (data) => {
     try {
-      await Message.updateMany(
-        { 
-          sender: data.senderId, 
-          receiver: data.receiverId, 
-          isRead: false 
-        },
-        { isRead: true }
-      );
+      const { messageId, userId } = data;
       
-      socket.to(data.senderId).emit('messages read', {
-        readerId: data.receiverId
-      });
+      // Update message as read in database
+      await Message.findByIdAndUpdate(messageId, { read: true });
+      
+      // Notify sender that message was read
+      socket.to(userId).emit('messageRead', messageId);
     } catch (error) {
-      console.error('Error marking messages as read:', error);
+      console.error('Error marking message as read:', error);
     }
   });
   
   // Handle disconnection
-  socket.on('disconnect', () => {
+  socket.on('disconnect', async () => {
     console.log('User disconnected:', socket.id);
+    
+    // Update user status to offline
+    // This would require storing socketId to userId mapping
   });
+});
+
+// Get user messages
+app.get('/api/messages/:userId/:contactId', async (req, res) => {
+  try {
+    const { userId, contactId } = req.params;
+    
+    const messages = await Message.find({
+      $or: [
+        { sender: userId, receiver: contactId },
+        { sender: contactId, receiver: userId }
+      ]
+    })
+    .populate('sender', 'username avatar')
+    .sort({ timestamp: 1 });
+    
+    res.json(messages);
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+});
+
+// Get user contacts
+app.get('/api/contacts/:userId', async (req, res) => {
+  try {
+    const { userId } = req.params;
+    
+    // Find all users that have exchanged messages with the current user
+    const contacts = await Message.aggregate([
+      {
+        $match: {
+          $or: [{ sender: mongoose.Types.ObjectId(userId) }, { receiver: mongoose.Types.ObjectId(userId) }]
+        }
+      },
+      {
+        $project: {
+          contact: {
+            $cond: {
+              if: { $eq: ['$sender', mongoose.Types.ObjectId(userId)] },
+              then: '$receiver',
+              else: '$sender'
+            }
+          },
+          lastMessage: '$content',
+          timestamp: '$timestamp',
+          read: '$read'
+        }
+      },
+      {
+        $group: {
+          _id: '$contact',
+          lastMessage: { $last: '$lastMessage' },
+          timestamp: { $last: '$timestamp' },
+          unreadCount: {
+            $sum: {
+              $cond: [{ $eq: ['$read', false] }, 1, 0]
+            }
+          }
+        }
+      },
+      {
+        $lookup: {
+          from: 'users',
+          localField: '_id',
+          foreignField: '_id',
+          as: 'contactInfo'
+        }
+      },
+      {
+        $unwind: '$contactInfo'
+      },
+      {
+        $project: {
+          _id: '$contactInfo._id',
+          username: '$contactInfo.username',
+          avatar: '$contactInfo.avatar',
+          status: '$contactInfo.status',
+          lastMessage: 1,
+          timestamp: 1,
+          unreadCount: 1
+        }
+      },
+      {
+        $sort: { timestamp: -1 }
+      }
+    ]);
+    
+    res.json(contacts);
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
 });
 
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
-  console.log(`Gram_X server running on port ${PORT}`);
+  console.log(`Server running on port ${PORT}`);
 });
