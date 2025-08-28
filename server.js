@@ -2,180 +2,111 @@ const express = require('express');
 const http = require('http');
 const socketIo = require('socket.io');
 const mongoose = require('mongoose');
-const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
-const cors = require('cors');
 const path = require('path');
-const multer = require('multer');
+const bcrypt = require('bcryptjs');
+const session = require('express-session');
 require('dotenv').config();
 
 const app = express();
 const server = http.createServer(app);
-const io = socketIo(server, {
-  cors: {
-    origin: "*",
-    methods: ["GET", "POST"]
-  }
-});
+const io = socketIo(server);
 
 // Middleware
-app.use(cors());
 app.use(express.json());
-app.use(express.static('public'));
-app.use('/uploads', express.static('uploads'));
-
-// File upload configuration
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    cb(null, 'uploads/')
-  },
-  filename: function (req, file, cb) {
-    cb(null, Date.now() + '-' + file.originalname)
-  }
-});
-
-const upload = multer({ 
-  storage: storage,
-  limits: {
-    fileSize: 10 * 1024 * 1024 // 10MB limit
-  }
-});
+app.use(express.urlencoded({ extended: true }));
+app.use(express.static(path.join(__dirname, 'public')));
+app.use(session({
+  secret: 'gram_x_secret_key',
+  resave: false,
+  saveUninitialized: false,
+  cookie: { secure: false, maxAge: 24 * 60 * 60 * 1000 } // 24 hours
+}));
 
 // MongoDB connection
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb+srv://ellyongiro8:QwXDXE6tyrGpUTNb@cluster0.tyxcmm9.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0';
-mongoose.connect(MONGODB_URI, {
+mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/gram_x', {
   useNewUrlParser: true,
-  useUnifiedTopology: true,
+  useUnifiedTopology: true
 })
 .then(() => console.log('Connected to MongoDB'))
 .catch(err => console.error('MongoDB connection error:', err));
 
-// User Schema
+// User schema
 const userSchema = new mongoose.Schema({
   username: { type: String, required: true, unique: true },
   password: { type: String, required: true },
-  phone: { type: String, unique: true, sparse: true },
   profile: {
     firstName: String,
     lastName: String,
-    bio: { type: String, default: '' },
-    avatar: String,
+    bio: String,
+    avatar: { type: String, default: 'https://i.imgur.com/hwklZjP.jpeg' },
     lastSeen: { type: Date, default: Date.now }
-  },
-  contacts: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
-  blockedUsers: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
-  isOnline: { type: Boolean, default: false },
-  createdAt: { type: Date, default: Date.now }
-});
+  }
+}, { timestamps: true });
 
-// Message Schema
+// Message schema
 const messageSchema = new mongoose.Schema({
   sender: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
-  receiver: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
-  content: { type: String, required: true },
-  timestamp: { type: Date, default: Date.now },
-  read: { type: Boolean, default: false },
-  type: { type: String, default: 'text' }, // text, image, file, audio
-  fileUrl: String,
-  fileName: String
-});
-
-// Group Schema
-const groupSchema = new mongoose.Schema({
-  name: { type: String, required: true },
-  description: String,
-  admin: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
-  members: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
-  avatar: String,
-  createdAt: { type: Date, default: Date.now }
-});
-
-// Group Message Schema
-const groupMessageSchema = new mongoose.Schema({
-  group: { type: mongoose.Schema.Types.ObjectId, ref: 'Group', required: true },
-  sender: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
-  content: { type: String, required: true },
-  timestamp: { type: Date, default: Date.now },
-  type: { type: String, default: 'text' },
-  fileUrl: String,
-  fileName: String
-});
+  receiver: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+  text: { type: String, required: true },
+  room: { type: String, default: 'general' },
+  isRead: { type: Boolean, default: false }
+}, { timestamps: true });
 
 const User = mongoose.model('User', userSchema);
 const Message = mongoose.model('Message', messageSchema);
-const Group = mongoose.model('Group', groupSchema);
-const GroupMessage = mongoose.model('GroupMessage', groupMessageSchema);
-
-// JWT Secret
-const JWT_SECRET = process.env.JWT_SECRET || 'your_jwt_secret_key';
 
 // Authentication middleware
-const authenticateToken = (req, res, next) => {
-  const authHeader = req.headers['authorization'];
-  const token = authHeader && authHeader.split(' ')[1];
-
-  if (!token) {
-    return res.status(401).json({ error: 'Access token required' });
-  }
-
-  jwt.verify(token, JWT_SECRET, (err, user) => {
-    if (err) {
-      return res.status(403).json({ error: 'Invalid token' });
-    }
-    req.user = user;
+function requireAuth(req, res, next) {
+  if (req.session.userId) {
     next();
-  });
-};
+  } else {
+    res.status(401).json({ error: 'Authentication required' });
+  }
+}
 
-// Routes
+// API Routes
+
+// Register new user
 app.post('/api/register', async (req, res) => {
   try {
-    const { username, password, phone } = req.body;
+    const { username, password, firstName, lastName } = req.body;
     
-    // Check if user exists
-    const existingUser = await User.findOne({ 
-      $or: [{ username }, { phone }] 
-    });
-    
+    // Check if user already exists
+    const existingUser = await User.findOne({ username });
     if (existingUser) {
-      return res.status(400).json({ error: 'User already exists' });
+      return res.status(400).json({ error: 'Username already exists' });
     }
     
     // Hash password
-    const hashedPassword = await bcrypt.hash(password, 10);
+    const hashedPassword = await bcrypt.hash(password, 12);
     
     // Create user
     const user = new User({
       username,
       password: hashedPassword,
-      phone,
-      profile: {
-        firstName: '',
-        lastName: '',
-        bio: '',
-        avatar: ''
-      }
+      profile: { firstName, lastName }
     });
     
     await user.save();
     
-    // Generate token
-    const token = jwt.sign({ userId: user._id }, JWT_SECRET);
+    // Set session
+    req.session.userId = user._id;
+    req.session.username = user.username;
     
-    res.status(201).json({ 
+    res.json({ 
       message: 'User created successfully', 
-      token,
-      user: {
-        id: user._id,
-        username: user.username,
-        profile: user.profile
-      }
+      user: { 
+        id: user._id, 
+        username: user.username, 
+        profile: user.profile 
+      } 
     });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ error: 'Failed to create user' });
   }
 });
 
+// Login user
 app.post('/api/login', async (req, res) => {
   try {
     const { username, password } = req.body;
@@ -187,267 +118,235 @@ app.post('/api/login', async (req, res) => {
     }
     
     // Check password
-    const validPassword = await bcrypt.compare(password, user.password);
-    if (!validPassword) {
+    const isValidPassword = await bcrypt.compare(password, user.password);
+    if (!isValidPassword) {
       return res.status(400).json({ error: 'Invalid credentials' });
     }
     
-    // Update last seen and online status
+    // Update last seen
     user.profile.lastSeen = new Date();
-    user.isOnline = true;
     await user.save();
     
-    // Generate token
-    const token = jwt.sign({ userId: user._id }, JWT_SECRET);
+    // Set session
+    req.session.userId = user._id;
+    req.session.username = user.username;
     
     res.json({ 
       message: 'Login successful', 
-      token,
-      user: {
-        id: user._id,
-        username: user.username,
-        profile: user.profile,
-        isOnline: user.isOnline
-      }
+      user: { 
+        id: user._id, 
+        username: user.username, 
+        profile: user.profile 
+      } 
     });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ error: 'Failed to login' });
   }
 });
 
-app.post('/api/logout', authenticateToken, async (req, res) => {
+// Logout user
+app.post('/api/logout', (req, res) => {
+  req.session.destroy();
+  res.json({ message: 'Logout successful' });
+});
+
+// Get current user
+app.get('/api/user', requireAuth, async (req, res) => {
   try {
-    const user = await User.findById(req.user.userId);
-    if (user) {
-      user.isOnline = false;
-      user.profile.lastSeen = new Date();
-      await user.save();
-    }
-    res.json({ message: 'Logout successful' });
+    const user = await User.findById(req.session.userId);
+    res.json({ 
+      id: user._id, 
+      username: user.username, 
+      profile: user.profile 
+    });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ error: 'Failed to fetch user' });
   }
 });
 
-app.get('/api/user/:id', authenticateToken, async (req, res) => {
+// Get all users
+app.get('/api/users', requireAuth, async (req, res) => {
   try {
-    const user = await User.findById(req.params.id).select('-password');
+    const users = await User.find({ _id: { $ne: req.session.userId } })
+      .select('username profile');
+    res.json(users);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch users' });
+  }
+});
+
+// Update user profile
+app.put('/api/user/profile', requireAuth, async (req, res) => {
+  try {
+    const { firstName, lastName, bio, avatar } = req.body;
+    
+    const user = await User.findById(req.session.userId);
     if (!user) {
       return res.status(404).json({ error: 'User not found' });
     }
-    res.json(user);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-app.put('/api/user/profile', authenticateToken, async (req, res) => {
-  try {
-    const { firstName, lastName, bio } = req.body;
-    const user = await User.findById(req.user.userId);
     
-    if (!user) {
-      return res.status(404).json({ error: 'User not found' });
-    }
-    
-    user.profile = {
-      firstName: firstName || user.profile.firstName,
-      lastName: lastName || user.profile.lastName,
-      bio: bio || user.profile.bio,
-      avatar: user.profile.avatar,
-      lastSeen: user.profile.lastSeen
+    user.profile = { 
+      ...user.profile, 
+      firstName, 
+      lastName, 
+      bio, 
+      avatar: avatar || user.profile.avatar 
     };
     
     await user.save();
-    res.json({ message: 'Profile updated successfully', profile: user.profile });
+    
+    res.json({ 
+      message: 'Profile updated successfully', 
+      profile: user.profile 
+    });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ error: 'Failed to update profile' });
   }
 });
 
-app.post('/api/user/avatar', authenticateToken, upload.single('avatar'), async (req, res) => {
+// Get messages for a conversation
+app.get('/api/messages/:userId', requireAuth, async (req, res) => {
   try {
-    if (!req.file) {
-      return res.status(400).json({ error: 'No file uploaded' });
-    }
+    const { userId } = req.params;
     
-    const user = await User.findById(req.user.userId);
-    if (!user) {
-      return res.status(404).json({ error: 'User not found' });
-    }
-    
-    user.profile.avatar = `/uploads/${req.file.filename}`;
-    await user.save();
-    
-    res.json({ message: 'Avatar updated successfully', avatar: user.profile.avatar });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-app.get('/api/users', authenticateToken, async (req, res) => {
-  try {
-    const users = await User.find({ _id: { $ne: req.user.userId } }).select('-password');
-    res.json(users);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-app.get('/api/messages/:userId', authenticateToken, async (req, res) => {
-  try {
     const messages = await Message.find({
       $or: [
-        { sender: req.user.userId, receiver: req.params.userId },
-        { sender: req.params.userId, receiver: req.user.userId }
+        { sender: req.session.userId, receiver: userId },
+        { sender: userId, receiver: req.session.userId }
       ]
-    }).populate('sender', 'username profile').populate('receiver', 'username profile').sort({ timestamp: 1 });
+    })
+    .populate('sender', 'username profile')
+    .populate('receiver', 'username profile')
+    .sort({ createdAt: 1 });
     
     res.json(messages);
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ error: 'Failed to fetch messages' });
   }
 });
 
-app.post('/api/messages/read/:userId', authenticateToken, async (req, res) => {
+// Get group messages
+app.get('/api/messages/group/:room', requireAuth, async (req, res) => {
   try {
-    await Message.updateMany(
-      { sender: req.params.userId, receiver: req.user.userId, read: false },
-      { $set: { read: true } }
-    );
+    const { room } = req.params;
     
-    res.json({ message: 'Messages marked as read' });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-// Group routes
-app.post('/api/groups', authenticateToken, async (req, res) => {
-  try {
-    const { name, description, members } = req.body;
-    
-    const group = new Group({
-      name,
-      description,
-      admin: req.user.userId,
-      members: [...members, req.user.userId]
-    });
-    
-    await group.save();
-    await group.populate('members', 'username profile');
-    await group.populate('admin', 'username profile');
-    
-    res.status(201).json(group);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-app.get('/api/groups', authenticateToken, async (req, res) => {
-  try {
-    const groups = await Group.find({ members: req.user.userId })
-      .populate('admin', 'username profile')
-      .populate('members', 'username profile');
-    
-    res.json(groups);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-app.get('/api/groups/:groupId/messages', authenticateToken, async (req, res) => {
-  try {
-    const messages = await GroupMessage.find({ group: req.params.groupId })
+    const messages = await Message.find({ room })
       .populate('sender', 'username profile')
-      .sort({ timestamp: 1 });
+      .sort({ createdAt: 1 });
     
     res.json(messages);
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ error: 'Failed to fetch messages' });
   }
 });
 
-// Socket.io for real-time messaging
+// Serve the main application
+app.get('/', (req, res) => {
+  if (req.session.userId) {
+    res.sendFile(path.join(__dirname, 'public', 'index.html'));
+  } else {
+    res.sendFile(path.join(__dirname, 'public', 'login.html'));
+  }
+});
+
+// Socket.io connection handling
 io.on('connection', (socket) => {
   console.log('User connected:', socket.id);
   
-  socket.on('join', (userId) => {
+  // Join user's personal room
+  socket.on('join user', (userId) => {
     socket.join(userId);
     console.log(`User ${userId} joined their room`);
   });
   
-  socket.on('joinGroup', (groupId) => {
-    socket.join(groupId);
-    console.log(`User joined group ${groupId}`);
+  // Join a conversation
+  socket.on('join conversation', (data) => {
+    if (data.userId) {
+      socket.join(data.userId);
+    } else if (data.room) {
+      socket.join(data.room);
+    }
   });
   
-  socket.on('sendMessage', async (data) => {
+  // Handle private messages
+  socket.on('private message', async (data) => {
     try {
-      const { senderId, receiverId, content, type, fileUrl, fileName } = data;
-      
-      // Save message to database
       const message = new Message({
-        sender: senderId,
-        receiver: receiverId,
-        content,
-        type: type || 'text',
-        fileUrl,
-        fileName,
-        timestamp: new Date()
+        sender: data.senderId,
+        receiver: data.receiverId,
+        text: data.text
       });
       
       await message.save();
       
       // Populate sender info
       await message.populate('sender', 'username profile');
-      await message.populate('receiver', 'username profile');
       
-      // Send to receiver
-      socket.to(receiverId).emit('receiveMessage', message);
-      
-      // Send back to sender for confirmation
-      socket.emit('messageSent', message);
+      // Send to both sender and receiver
+      io.to(data.senderId).emit('new private message', message);
+      io.to(data.receiverId).emit('new private message', message);
     } catch (error) {
-      socket.emit('error', { message: 'Failed to send message' });
+      console.error('Error saving private message:', error);
     }
   });
   
-  socket.on('sendGroupMessage', async (data) => {
+  // Handle group messages
+  socket.on('group message', async (data) => {
     try {
-      const { groupId, senderId, content, type, fileUrl, fileName } = data;
-      
-      // Save message to database
-      const message = new GroupMessage({
-        group: groupId,
-        sender: senderId,
-        content,
-        type: type || 'text',
-        fileUrl,
-        fileName,
-        timestamp: new Date()
+      const message = new Message({
+        sender: data.senderId,
+        text: data.text,
+        room: data.room
       });
       
       await message.save();
+      
+      // Populate sender info
       await message.populate('sender', 'username profile');
       
-      // Send to all group members
-      socket.to(groupId).emit('receiveGroupMessage', message);
-      
-      // Send back to sender for confirmation
-      socket.emit('groupMessageSent', message);
+      // Send to everyone in the room
+      io.to(data.room).emit('new group message', message);
     } catch (error) {
-      socket.emit('error', { message: 'Failed to send group message' });
+      console.error('Error saving group message:', error);
     }
   });
   
+  // Handle typing indicators
   socket.on('typing', (data) => {
-    socket.to(data.receiverId).emit('userTyping', {
-      senderId: data.senderId,
-      isTyping: data.isTyping
-    });
+    if (data.conversationType === 'private') {
+      socket.to(data.receiverId).emit('user typing', {
+        userId: data.senderId,
+        isTyping: data.isTyping
+      });
+    } else {
+      socket.to(data.room).emit('user typing', {
+        userId: data.senderId,
+        isTyping: data.isTyping
+      });
+    }
   });
   
+  // Handle message read status
+  socket.on('mark as read', async (data) => {
+    try {
+      await Message.updateMany(
+        { 
+          sender: data.senderId, 
+          receiver: data.receiverId, 
+          isRead: false 
+        },
+        { isRead: true }
+      );
+      
+      socket.to(data.senderId).emit('messages read', {
+        readerId: data.receiverId
+      });
+    } catch (error) {
+      console.error('Error marking messages as read:', error);
+    }
+  });
+  
+  // Handle disconnection
   socket.on('disconnect', () => {
     console.log('User disconnected:', socket.id);
   });
@@ -455,10 +354,5 @@ io.on('connection', (socket) => {
 
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-  // Create uploads directory if it doesn't exist
-  const fs = require('fs');
-  if (!fs.existsSync('uploads')) {
-    fs.mkdirSync('uploads');
-  }
+  console.log(`Gram_X server running on port ${PORT}`);
 });
