@@ -1,21 +1,13 @@
-require('dotenv').config();
 const express = require('express');
 const http = require('http');
 const socketIo = require('socket.io');
 const mongoose = require('mongoose');
-const cors = require('cors');
-const helmet = require('helmet');
-const rateLimit = require('express-rate-limit');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const path = require('path');
+const cors = require('cors');
+require('dotenv').config();
 
-// Initialize Express app
 const app = express();
-
-// Trust proxy headers (important for rate limiting behind reverse proxies)
-app.set('trust proxy', 1); // Trust first proxy
-
 const server = http.createServer(app);
 const io = socketIo(server, {
   cors: {
@@ -25,441 +17,258 @@ const io = socketIo(server, {
 });
 
 // Middleware
-app.use(helmet());
 app.use(cors());
-app.use(express.json({ limit: '10mb' }));
-app.use(express.static(path.join(__dirname, 'public')));
-
-// Rate limiting
-const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 100
-});
-app.use(limiter);
+app.use(express.json());
+app.use(express.static('public'));
 
 // MongoDB connection
-mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/gram_x', {
+const MONGODB_URI = process.env.MONGODB_URI || 'mongodb+srv://ellyongiro8:QwXDXE6tyrGpUTNb@cluster0.tyxcmm9.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0';
+mongoose.connect(MONGODB_URI, {
   useNewUrlParser: true,
   useUnifiedTopology: true,
-});
+})
+.then(() => console.log('Connected to MongoDB'))
+.catch(err => console.error('MongoDB connection error:', err));
 
 // User Schema
 const userSchema = new mongoose.Schema({
   username: { type: String, required: true, unique: true },
-  email: { type: String, required: true, unique: true },
   password: { type: String, required: true },
-  avatar: { type: String, default: null },
-  displayName: { type: String, default: '' },
-  bio: { type: String, default: '' },
-  isOnline: { type: Boolean, default: false },
-  lastSeen: { type: Date, default: Date.now },
-  blockedUsers: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
-}, { timestamps: true });
-
-userSchema.pre('save', async function(next) {
-  if (!this.isModified('password')) return next();
-  this.password = await bcrypt.hash(this.password, 12);
-  next();
+  phone: { type: String, unique: true, sparse: true },
+  profile: {
+    firstName: String,
+    lastName: String,
+    bio: String,
+    avatar: String,
+    lastSeen: Date
+  },
+  contacts: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+  createdAt: { type: Date, default: Date.now }
 });
-
-userSchema.methods.comparePassword = async function(candidatePassword) {
-  return await bcrypt.compare(candidatePassword, this.password);
-};
-
-const User = mongoose.model('User', userSchema);
-
-// Chat Schema
-const chatSchema = new mongoose.Schema({
-  name: { type: String, default: '' },
-  isGroup: { type: Boolean, default: false },
-  participants: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true }],
-  admin: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
-  avatar: { type: String, default: null },
-  lastMessage: { type: mongoose.Schema.Types.ObjectId, ref: 'Message', default: null },
-}, { timestamps: true });
-
-const Chat = mongoose.model('Chat', chatSchema);
 
 // Message Schema
 const messageSchema = new mongoose.Schema({
-  chat: { type: mongoose.Schema.Types.ObjectId, ref: 'Chat', required: true },
   sender: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
-  content: {
-    text: { type: String, default: '' },
-    media: [{
-      type: { type: String },
-      url: { type: String },
-      name: { type: String },
-      size: { type: Number }
-    }]
-  },
-  type: { type: String, enum: ['text', 'image', 'video', 'audio', 'file'], default: 'text' },
-  replyTo: { type: mongoose.Schema.Types.ObjectId, ref: 'Message', default: null },
-  edited: { type: Boolean, default: false },
-  deleted: { type: Boolean, default: false },
-  readBy: [{
-    user: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
-    timestamp: { type: Date, default: Date.now }
-  }],
-  deliveredTo: [{
-    user: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
-    timestamp: { type: Date, default: Date.now }
-  }]
-}, { timestamps: true });
+  receiver: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+  content: { type: String, required: true },
+  timestamp: { type: Date, default: Date.now },
+  read: { type: Boolean, default: false },
+  type: { type: String, default: 'text' } // text, image, file, etc.
+});
 
+const User = mongoose.model('User', userSchema);
 const Message = mongoose.model('Message', messageSchema);
 
+// JWT Secret
+const JWT_SECRET = process.env.JWT_SECRET || 'your_jwt_secret_key';
+
 // Authentication middleware
-const authenticateToken = async (req, res, next) => {
-  try {
-    const authHeader = req.headers['authorization'];
-    const token = authHeader && authHeader.split(' ')[1];
-    
-    if (!token) return res.status(401).json({ message: 'Access token required' });
+const authenticateToken = (req, res, next) => {
+  const authHeader = req.headers['authorization'];
+  const token = authHeader && authHeader.split(' ')[1];
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback_secret');
-    const user = await User.findById(decoded.userId).select('-password');
-    
-    if (!user) return res.status(401).json({ message: 'Invalid token' });
+  if (!token) {
+    return res.status(401).json({ error: 'Access token required' });
+  }
 
+  jwt.verify(token, JWT_SECRET, (err, user) => {
+    if (err) {
+      return res.status(403).json({ error: 'Invalid token' });
+    }
     req.user = user;
     next();
-  } catch (error) {
-    return res.status(403).json({ message: 'Invalid or expired token' });
-  }
-};
-
-// Generate JWT tokens
-const generateTokens = (userId) => {
-  const accessToken = jwt.sign(
-    { userId }, 
-    process.env.JWT_SECRET || 'fallback_secret', 
-    { expiresIn: '15m' }
-  );
-  
-  const refreshToken = jwt.sign(
-    { userId }, 
-    process.env.JWT_REFRESH_SECRET || 'fallback_refresh_secret', 
-    { expiresIn: '7d' }
-  );
-  
-  return { accessToken, refreshToken };
-};
-
-// Validation function
-const validateRegistration = (req) => {
-  const { username, email, password } = req.body;
-  const errors = [];
-  
-  if (!username || username.length < 3) {
-    errors.push({ msg: 'Username must be at least 3 characters' });
-  }
-  
-  if (!email || !/\S+@\S+\.\S+/.test(email)) {
-    errors.push({ msg: 'Must be a valid email' });
-  }
-  
-  if (!password || password.length < 6) {
-    errors.push({ msg: 'Password must be at least 6 characters' });
-  }
-  
-  return errors;
+  });
 };
 
 // Routes
-app.post('/api/auth/register', async (req, res) => {
+app.post('/api/register', async (req, res) => {
   try {
-    const errors = validateRegistration(req);
-    if (errors.length > 0) {
-      return res.status(400).json({ errors });
-    }
-
-    const { username, email, password } = req.body;
+    const { username, password, phone } = req.body;
     
+    // Check if user exists
     const existingUser = await User.findOne({ 
-      $or: [{ email }, { username }] 
+      $or: [{ username }, { phone }] 
     });
     
     if (existingUser) {
-      return res.status(400).json({ message: 'User already exists' });
+      return res.status(400).json({ error: 'User already exists' });
     }
-
-    const user = new User({ username, email, password });
-    await user.save();
-
-    const { accessToken, refreshToken } = generateTokens(user._id);
     
-    res.status(201).json({
-      message: 'User created successfully',
+    // Hash password
+    const hashedPassword = await bcrypt.hash(password, 10);
+    
+    // Create user
+    const user = new User({
+      username,
+      password: hashedPassword,
+      phone,
+      profile: {
+        firstName: '',
+        lastName: '',
+        bio: '',
+        avatar: ''
+      }
+    });
+    
+    await user.save();
+    
+    // Generate token
+    const token = jwt.sign({ userId: user._id }, JWT_SECRET);
+    
+    res.status(201).json({ 
+      message: 'User created successfully', 
+      token,
       user: {
         id: user._id,
         username: user.username,
-        email: user.email,
-        avatar: user.avatar
-      },
-      accessToken,
-      refreshToken
+        profile: user.profile
+      }
     });
   } catch (error) {
-    res.status(500).json({ message: 'Server error', error: error.message });
+    res.status(500).json({ error: error.message });
   }
 });
 
-app.post('/api/auth/login', async (req, res) => {
+app.post('/api/login', async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const { username, password } = req.body;
     
-    const user = await User.findOne({ email });
-    if (!user || !(await user.comparePassword(password))) {
-      return res.status(401).json({ message: 'Invalid credentials' });
+    // Find user
+    const user = await User.findOne({ username });
+    if (!user) {
+      return res.status(400).json({ error: 'Invalid credentials' });
     }
-
-    user.isOnline = true;
-    user.lastSeen = new Date();
-    await user.save();
-
-    const { accessToken, refreshToken } = generateTokens(user._id);
     
-    res.json({
-      message: 'Login successful',
+    // Check password
+    const validPassword = await bcrypt.compare(password, user.password);
+    if (!validPassword) {
+      return res.status(400).json({ error: 'Invalid credentials' });
+    }
+    
+    // Update last seen
+    user.profile.lastSeen = new Date();
+    await user.save();
+    
+    // Generate token
+    const token = jwt.sign({ userId: user._id }, JWT_SECRET);
+    
+    res.json({ 
+      message: 'Login successful', 
+      token,
       user: {
         id: user._id,
         username: user.username,
-        email: user.email,
-        avatar: user.avatar,
-        displayName: user.displayName
-      },
-      accessToken,
-      refreshToken
+        profile: user.profile
+      }
     });
   } catch (error) {
-    res.status(500).json({ message: 'Server error', error: error.message });
+    res.status(500).json({ error: error.message });
   }
 });
 
-app.get('/api/users/me', authenticateToken, async (req, res) => {
-  res.json({
-    user: {
-      id: req.user._id,
-      username: req.user.username,
-      email: req.user.email,
-      avatar: req.user.avatar,
-      displayName: req.user.displayName,
-      bio: req.user.bio,
-      isOnline: req.user.isOnline,
-      lastSeen: req.user.lastSeen
-    }
-  });
-});
-
-app.get('/api/chats', authenticateToken, async (req, res) => {
+app.get('/api/user/:id', authenticateToken, async (req, res) => {
   try {
-    const chats = await Chat.find({ participants: req.user._id })
-      .populate('participants', 'username avatar displayName isOnline lastSeen')
-      .populate('lastMessage')
-      .sort({ updatedAt: -1 });
-    
-    res.json(chats);
+    const user = await User.findById(req.params.id).select('-password');
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    res.json(user);
   } catch (error) {
-    res.status(500).json({ message: 'Server error', error: error.message });
+    res.status(500).json({ error: error.message });
   }
 });
 
-app.post('/api/chats', authenticateToken, async (req, res) => {
+app.put('/api/user/profile', authenticateToken, async (req, res) => {
   try {
-    const { participantIds, isGroup, name } = req.body;
-    
-    if (!isGroup && participantIds.length !== 1) {
-      return res.status(400).json({ message: '1:1 chat requires exactly one participant' });
-    }
-
-    const participants = [req.user._id, ...participantIds];
-    
-    let chat = await Chat.findOne({
-      isGroup: false,
-      participants: { $all: participants, $size: participants.length }
-    }).populate('participants', 'username avatar displayName');
-
-    if (!chat && !isGroup) {
-      chat = new Chat({
-        participants,
-        isGroup: false
-      });
-      await chat.save();
-      chat = await Chat.findById(chat._id).populate('participants', 'username avatar displayName');
-    } else if (isGroup) {
-      chat = new Chat({
-        name,
-        participants,
-        isGroup: true,
-        admin: req.user._id
-      });
-      await chat.save();
-      chat = await Chat.findById(chat._id).populate('participants', 'username avatar displayName');
-    }
-
-    res.status(201).json(chat);
-  } catch (error) {
-    res.status(500).json({ message: 'Server error', error: error.message });
-  }
-});
-
-app.get('/api/chats/:chatId/messages', authenticateToken, async (req, res) => {
-  try {
-    const { chatId } = req.params;
-    const { page = 1, limit = 20 } = req.query;
-    
-    const chat = await Chat.findOne({
-      _id: chatId,
-      participants: req.user._id
-    });
-    
-    if (!chat) {
-      return res.status(404).json({ message: 'Chat not found' });
-    }
-
-    const messages = await Message.find({ chat: chatId, deleted: false })
-      .populate('sender', 'username avatar displayName')
-      .populate('replyTo')
-      .sort({ createdAt: -1 })
-      .limit(limit * 1)
-      .skip((page - 1) * limit);
-    
-    res.json(messages.reverse());
-  } catch (error) {
-    res.status(500).json({ message: 'Server error', error: error.message });
-  }
-});
-
-// Socket.IO connection handling
-io.use(async (socket, next) => {
-  try {
-    const token = socket.handshake.auth.token;
-    
-    if (!token) {
-      return next(new Error('Authentication error'));
-    }
-
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback_secret');
-    const user = await User.findById(decoded.userId).select('-password');
+    const { firstName, lastName, bio, avatar } = req.body;
+    const user = await User.findById(req.user.userId);
     
     if (!user) {
-      return next(new Error('Authentication error'));
+      return res.status(404).json({ error: 'User not found' });
     }
-
-    socket.userId = user._id;
-    socket.user = user;
-    next();
+    
+    user.profile = {
+      firstName: firstName || user.profile.firstName,
+      lastName: lastName || user.profile.lastName,
+      bio: bio || user.profile.bio,
+      avatar: avatar || user.profile.avatar,
+      lastSeen: user.profile.lastSeen
+    };
+    
+    await user.save();
+    res.json({ message: 'Profile updated successfully', profile: user.profile });
   } catch (error) {
-    next(new Error('Authentication error'));
+    res.status(500).json({ error: error.message });
   }
 });
 
+app.get('/api/users', authenticateToken, async (req, res) => {
+  try {
+    const users = await User.find({ _id: { $ne: req.user.userId } }).select('-password');
+    res.json(users);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.get('/api/messages/:userId', authenticateToken, async (req, res) => {
+  try {
+    const messages = await Message.find({
+      $or: [
+        { sender: req.user.userId, receiver: req.params.userId },
+        { sender: req.params.userId, receiver: req.user.userId }
+      ]
+    }).populate('sender', 'username profile').populate('receiver', 'username profile').sort({ timestamp: 1 });
+    
+    res.json(messages);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Socket.io for real-time messaging
 io.on('connection', (socket) => {
   console.log('User connected:', socket.id);
-
-  socket.on('join-chat', (chatId) => {
-    socket.join(chatId);
-    console.log(`User joined chat: ${chatId}`);
+  
+  socket.on('join', (userId) => {
+    socket.join(userId);
+    console.log(`User ${userId} joined their room`);
   });
-
-  socket.on('leave-chat', (chatId) => {
-    socket.leave(chatId);
-    console.log(`User left chat: ${chatId}`);
-  });
-
-  socket.on('send-message', async (data) => {
+  
+  socket.on('sendMessage', async (data) => {
     try {
-      const { chatId, content, type, replyTo } = data;
+      const { senderId, receiverId, content } = data;
       
-      const chat = await Chat.findOne({
-        _id: chatId,
-        participants: socket.userId
-      });
-      
-      if (!chat) {
-        return socket.emit('error', { message: 'Chat not found' });
-      }
-
+      // Save message to database
       const message = new Message({
-        chat: chatId,
-        sender: socket.userId,
+        sender: senderId,
+        receiver: receiverId,
         content,
-        type,
-        replyTo
+        timestamp: new Date()
       });
-
+      
       await message.save();
       
-      // Update chat's last message
-      chat.lastMessage = message._id;
-      await chat.save();
-
-      const populatedMessage = await Message.findById(message._id)
-        .populate('sender', 'username avatar displayName')
-        .populate('replyTo');
-
-      // Emit to all users in the chat
-      io.to(chatId).emit('new-message', populatedMessage);
+      // Populate sender info
+      await message.populate('sender', 'username profile');
+      await message.populate('receiver', 'username profile');
       
-      // Emit delivery status to sender
-      socket.emit('message-delivered', { messageId: message._id });
+      // Send to receiver
+      socket.to(receiverId).emit('receiveMessage', message);
+      
+      // Send back to sender for confirmation
+      socket.emit('messageSent', message);
     } catch (error) {
-      socket.emit('error', { message: 'Failed to send message', error: error.message });
+      socket.emit('error', { message: 'Failed to send message' });
     }
   });
-
-  socket.on('typing-start', (data) => {
-    socket.to(data.chatId).emit('user-typing', {
-      userId: socket.userId,
-      chatId: data.chatId
-    });
-  });
-
-  socket.on('typing-stop', (data) => {
-    socket.to(data.chatId).emit('user-stop-typing', {
-      userId: socket.userId,
-      chatId: data.chatId
-    });
-  });
-
-  socket.on('mark-as-read', async (data) => {
-    try {
-      const { messageId, chatId } = data;
-      
-      await Message.updateOne(
-        { _id: messageId },
-        { $addToSet: { readBy: { user: socket.userId, timestamp: new Date() } } }
-      );
-      
-      socket.to(chatId).emit('message-read', {
-        messageId,
-        userId: socket.userId
-      });
-    } catch (error) {
-      socket.emit('error', { message: 'Failed to mark as read', error: error.message });
-    }
-  });
-
-  socket.on('disconnect', async () => {
+  
+  socket.on('disconnect', () => {
     console.log('User disconnected:', socket.id);
-    
-    // Update user's online status
-    if (socket.userId) {
-      await User.findByIdAndUpdate(socket.userId, {
-        isOnline: false,
-        lastSeen: new Date()
-      });
-    }
   });
 });
 
-// Serve the frontend
-app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'index.html'));
-});
-
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
