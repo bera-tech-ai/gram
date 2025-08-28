@@ -3,297 +3,662 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>gram_x - Messaging App</title>
-    <script src="/socket.io/socket.io.js"></script>
+    <title>Gram_X - Secure Messaging</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         :root {
-            --bg-primary: #1a1a1a;
-            --bg-secondary: #2d2d2d;
-            --bg-tertiary: #3d3d3d;
-            --text-primary: #ffffff;
-            --text-secondary: #a0a0a0;
-            --accent: #0088cc;
-            --accent-hover: #006699;
-            --danger: #dc3545;
-            --success: #28a745;
+            /* Default theme (Neutral/Dark Modern) */
+            --bg-color: #1e1e2f;
+            --sidebar-bg: #2b2d42;
+            --chat-bg: #1a1c2d;
+            --sent-bubble: #2b2d42;
+            --received-bubble: #3a3d5c;
+            --primary-accent: #6c63ff;
+            --secondary-accent: #00adb5;
+            --text-color: #e0e0e0;
+            --sent-text: #e0e0e0;
+            --received-text: #e0e0e0;
+            --input-bg: #2b2d42;
+            --shadow-color: rgba(0, 0, 0, 0.2);
+            --online-status: #4CAF50;
+            --offline-status: #888;
+        }
+
+        /* WhatsApp theme */
+        [data-theme="whatsapp"] {
+            --bg-color: #e6ddd4;
+            --sidebar-bg: #f0f0f0;
+            --chat-bg: #e6ddd4;
+            --sent-bubble: #d9fdd3;
+            --received-bubble: #ffffff;
+            --primary-accent: #25d366;
+            --secondary-accent: #128c7e;
+            --text-color: #333333;
+            --sent-text: #333333;
+            --received-text: #333333;
+            --input-bg: #ffffff;
+            --shadow-color: rgba(0, 0, 0, 0.1);
+            --online-status: #25d366;
+            --offline-status: #888;
+        }
+
+        /* Neon/Cyberpunk theme */
+        [data-theme="neon"] {
+            --bg-color: #0a0a12;
+            --sidebar-bg: #15152a;
+            --chat-bg: #0a0a12;
+            --sent-bubble: #6c63ff;
+            --received-bubble: #ff2a6d;
+            --primary-accent: #00fffc;
+            --secondary-accent: #ff2a6d;
+            --text-color: #ffffff;
+            --sent-text: #ffffff;
+            --received-text: #ffffff;
+            --input-bg: #15152a;
+            --shadow-color: rgba(0, 255, 252, 0.2);
+            --online-status: #00fffc;
+            --offline-status: #ff2a6d;
         }
 
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-            background-color: var(--bg-primary);
-            color: var(--text-primary);
+            background-color: var(--bg-color);
+            color: var(--text-color);
             height: 100vh;
+            display: flex;
+            flex-direction: column;
+            transition: all 0.3s ease;
+        }
+
+        .header {
+            background-color: var(--sidebar-bg);
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 10px var(--shadow-color);
+            z-index: 10;
+        }
+
+        .header h1 {
+            font-size: 1.5rem;
+            color: var(--primary-accent);
+        }
+
+        .theme-selector {
+            background-color: var(--input-bg);
+            color: var(--text-color);
+            border: 1px solid var(--primary-accent);
+            padding: 8px 12px;
+            border-radius: 20px;
+            cursor: pointer;
+            outline: none;
+        }
+
+        .container {
+            display: flex;
+            flex: 1;
             overflow: hidden;
         }
 
-        .app-container {
-            display: flex;
-            height: 100vh;
-        }
-
-        /* Auth Styles */
-        .auth-container {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            background: linear-gradient(135deg, var(--bg-primary), var(--bg-secondary));
-        }
-
-        .auth-form {
-            background: var(--bg-secondary);
-            padding: 2rem;
-            border-radius: 8px;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
-            width: 100%;
-            max-width: 400px;
-        }
-
-        .auth-form h2 {
-            margin-bottom: 1.5rem;
-            text-align: center;
-            color: var(--text-primary);
-        }
-
-        .form-group {
-            margin-bottom: 1rem;
-        }
-
-        .form-group label {
-            display: block;
-            margin-bottom: 0.5rem;
-            color: var(--text-secondary);
-        }
-
-        .form-group input {
-            width: 100%;
-            padding: 0.75rem;
-            border: 1px solid var(--bg-tertiary);
-            border-radius: 4px;
-            background: var(--bg-primary);
-            color: var(--text-primary);
-        }
-
-        .form-group input:focus {
-            outline: none;
-            border-color: var(--accent);
-        }
-
-        .btn {
-            width: 100%;
-            padding: 0.75rem;
-            border: none;
-            border-radius: 4px;
-            background: var(--accent);
-            color: white;
-            font-weight: 600;
-            cursor: pointer;
-            transition: background 0.2s;
-        }
-
-        .btn:hover {
-            background: var(--accent-hover);
-        }
-
-        .auth-switch {
-            text-align: center;
-            margin-top: 1rem;
-            color: var(--text-secondary);
-        }
-
-        .auth-switch a {
-            color: var(--accent);
-            text-decoration: none;
-            cursor: pointer;
-        }
-
-        /* Chat Styles */
         .sidebar {
             width: 350px;
-            background: var(--bg-secondary);
-            border-right: 1px solid var(--bg-tertiary);
+            background-color: var(--sidebar-bg);
             display: flex;
             flex-direction: column;
+            border-right: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.3s ease;
         }
 
-        .sidebar-header {
-            padding: 1rem;
-            border-bottom: 1px solid var(--bg-tertiary);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .search-container {
-            padding: 1rem;
-            border-bottom: 1px solid var(--bg-tertiary);
-        }
-
-        .search-input {
-            width: 100%;
-            padding: 0.5rem;
-            border: 1px solid var(--bg-tertiary);
-            border-radius: 20px;
-            background: var(--bg-primary);
-            color: var(--text-primary);
-        }
-
-        .chat-list {
-            flex: 1;
-            overflow-y: auto;
-        }
-
-        .chat-item {
-            padding: 1rem;
-            border-bottom: 1px solid var(--bg-tertiary);
-            cursor: pointer;
-            transition: background 0.2s;
-        }
-
-        .chat-item:hover {
-            background: var(--bg-tertiary);
-        }
-
-        .chat-item.active {
-            background: var(--bg-tertiary);
-        }
-
-        .chat-info {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .chat-name {
-            font-weight: 600;
-            margin-bottom: 0.25rem;
-        }
-
-        .chat-preview {
-            font-size: 0.9rem;
-            color: var(--text-secondary);
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-
-        .chat-time {
-            font-size: 0.8rem;
-            color: var(--text-secondary);
-        }
-
-        .main-content {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-        }
-
-        .chat-header {
-            padding: 1rem;
-            border-bottom: 1px solid var(--bg-tertiary);
+        .user-panel {
+            padding: 15px;
             display: flex;
             align-items: center;
-            gap: 1rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
         }
 
         .user-avatar {
             width: 40px;
             height: 40px;
             border-radius: 50%;
-            background: var(--accent);
+            background-color: var(--primary-accent);
             display: flex;
             align-items: center;
             justify-content: center;
-            font-weight: 600;
+            font-weight: bold;
+            margin-right: 10px;
+            overflow: hidden;
         }
 
-        .user-info h3 {
-            margin-bottom: 0.25rem;
+        .user-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .user-info {
+            flex: 1;
+        }
+
+        .user-name {
+            font-weight: bold;
         }
 
         .user-status {
-            font-size: 0.9rem;
-            color: var(--text-secondary);
+            font-size: 0.8rem;
+            color: var(--online-status);
         }
 
-        .online {
-            color: var(--success);
+        .search-box {
+            padding: 15px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 10px 15px;
+            border-radius: 20px;
+            border: none;
+            background-color: var(--input-bg);
+            color: var(--text-color);
+            outline: none;
+        }
+
+        .contacts-list {
+            flex: 1;
+            overflow-y: auto;
+        }
+
+        .contact {
+            padding: 15px;
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .contact:hover {
+            background-color: rgba(255, 255, 255, 0.05);
+        }
+
+        .contact.active {
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+
+        .contact-avatar {
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            background-color: var(--secondary-accent);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            margin-right: 15px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .contact-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .online-indicator {
+            position: absolute;
+            bottom: 0;
+            right: 0;
+            width: 12px;
+            height: 12px;
+            background-color: var(--online-status);
+            border-radius: 50%;
+            border: 2px solid var(--sidebar-bg);
+        }
+
+        .offline .online-indicator {
+            background-color: var(--offline-status);
+        }
+
+        .contact-info {
+            flex: 1;
+        }
+
+        .contact-name {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .contact-preview {
+            font-size: 0.85rem;
+            opacity: 0.8;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .contact-time {
+            font-size: 0.75rem;
+            opacity: 0.6;
+            margin-top: 5px;
+        }
+
+        .chat-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background-color: var(--chat-bg);
+            position: relative;
+        }
+
+        .chat-header {
+            padding: 15px 20px;
+            display: flex;
+            align-items: center;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            background-color: var(--sidebar-bg);
+            z-index: 5;
+        }
+
+        .current-contact-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background-color: var(--secondary-accent);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            margin-right: 15px;
+            overflow: hidden;
+        }
+
+        .current-contact-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .current-contact-info {
+            flex: 1;
+        }
+
+        .current-contact-name {
+            font-weight: bold;
+        }
+
+        .current-contact-status {
+            font-size: 0.8rem;
+            color: var(--online-status);
+        }
+
+        .chat-actions {
+            display: flex;
+            gap: 15px;
+        }
+
+        .chat-action-btn {
+            background: none;
+            border: none;
+            color: var(--text-color);
+            font-size: 1.2rem;
+            cursor: pointer;
+            opacity: 0.8;
+            transition: opacity 0.2s;
+        }
+
+        .chat-action-btn:hover {
+            opacity: 1;
         }
 
         .messages-container {
             flex: 1;
-            padding: 1rem;
+            padding: 20px;
             overflow-y: auto;
             display: flex;
             flex-direction: column;
-            gap: 0.5rem;
+            gap: 15px;
         }
 
         .message {
             max-width: 70%;
-            padding: 0.75rem;
-            border-radius: 12px;
-            margin-bottom: 0.5rem;
+            padding: 12px 15px;
+            border-radius: 18px;
+            margin-bottom: 5px;
+            position: relative;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
         }
 
         .message.sent {
             align-self: flex-end;
-            background: var(--accent);
-            border-bottom-right-radius: 4px;
+            background-color: var(--sent-bubble);
+            color: var(--sent-text);
+            border-bottom-right-radius: 5px;
         }
 
         .message.received {
             align-self: flex-start;
-            background: var(--bg-tertiary);
-            border-bottom-left-radius: 4px;
-        }
-
-        .message-content {
-            margin-bottom: 0.25rem;
+            background-color: var(--received-bubble);
+            color: var(--received-text);
+            border-bottom-left-radius: 5px;
         }
 
         .message-time {
-            font-size: 0.75rem;
-            opacity: 0.8;
+            font-size: 0.7rem;
+            opacity: 0.7;
             text-align: right;
+            margin-top: 5px;
         }
 
-        .input-container {
-            padding: 1rem;
-            border-top: 1px solid var(--bg-tertiary);
+        .message-input-container {
+            padding: 15px 20px;
             display: flex;
-            gap: 0.5rem;
+            align-items: center;
+            background-color: var(--sidebar-bg);
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
         }
 
         .message-input {
             flex: 1;
-            padding: 0.75rem;
-            border: 1px solid var(--bg-tertiary);
+            padding: 12px 15px;
             border-radius: 20px;
-            background: var(--bg-primary);
-            color: var(--text-primary);
+            border: none;
+            background-color: var(--input-bg);
+            color: var(--text-color);
+            outline: none;
+            resize: none;
+            max-height: 120px;
+            overflow-y: auto;
+        }
+
+        .input-action-btn {
+            background: none;
+            border: none;
+            color: var(--text-color);
+            font-size: 1.2rem;
+            margin: 0 10px;
+            cursor: pointer;
+            opacity: 0.8;
+            transition: opacity 0.2s;
+        }
+
+        .input-action-btn:hover {
+            opacity: 1;
         }
 
         .send-btn {
-            padding: 0.75rem 1.5rem;
-            border: none;
-            border-radius: 20px;
-            background: var(--accent);
+            background-color: var(--primary-accent);
             color: white;
+            border: none;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .send-btn:hover {
+            background-color: var(--secondary-accent);
+        }
+
+        .auth-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: var(--bg-color);
+        }
+
+        .auth-form {
+            background-color: var(--sidebar-bg);
+            padding: 30px;
+            border-radius: 10px;
+            width: 400px;
+            box-shadow: 0 5px 15px var(--shadow-color);
+        }
+
+        .auth-form h2 {
+            text-align: center;
+            margin-bottom: 20px;
+            color: var(--primary-accent);
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 12px;
+            border-radius: 5px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            background-color: var(--input-bg);
+            color: var(--text-color);
+            outline: none;
+        }
+
+        .auth-btn {
+            width: 100%;
+            padding: 12px;
+            border: none;
+            border-radius: 5px;
+            background-color: var(--primary-accent);
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .auth-btn:hover {
+            background-color: var(--secondary-accent);
+        }
+
+        .auth-switch {
+            text-align: center;
+            margin-top: 20px;
+            font-size: 0.9rem;
+        }
+
+        .auth-switch a {
+            color: var(--primary-accent);
+            text-decoration: none;
             cursor: pointer;
         }
 
-        .typing-indicator {
-            padding: 0.5rem 1rem;
+        .settings-panel {
+            position: absolute;
+            top: 0;
+            right: -400px;
+            width: 400px;
+            height: 100%;
+            background-color: var(--sidebar-bg);
+            box-shadow: -5px 0 15px var(--shadow-color);
+            transition: right 0.3s ease;
+            z-index: 100;
+            overflow-y: auto;
+            padding: 20px;
+        }
+
+        .settings-panel.open {
+            right: 0;
+        }
+
+        .settings-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+
+        .settings-header h2 {
+            color: var(--primary-accent);
+        }
+
+        .close-settings {
+            background: none;
+            border: none;
+            color: var(--text-color);
+            font-size: 1.5rem;
+            cursor: pointer;
+        }
+
+        .settings-section {
+            margin-bottom: 30px;
+        }
+
+        .settings-section h3 {
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .profile-info {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .profile-avatar {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            background-color: var(--primary-accent);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 2rem;
+            margin-bottom: 15px;
+            overflow: hidden;
+        }
+
+        .profile-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .profile-name {
+            font-size: 1.2rem;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .profile-bio {
+            opacity: 0.8;
+            text-align: center;
+            margin-bottom: 15px;
+        }
+
+        .profile-status {
             font-size: 0.9rem;
-            color: var(--text-secondary);
-            font-style: italic;
+            color: var(--online-status);
+        }
+
+        .settings-item {
+            padding: 15px;
+            background-color: var(--input-bg);
+            border-radius: 8px;
+            margin-bottom: 10px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .settings-item:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+
+        .developer-info {
+            padding: 20px;
+            background-color: var(--input-bg);
+            border-radius: 8px;
+            margin-top: 30px;
+        }
+
+        .developer-info h4 {
+            margin-bottom: 15px;
+            color: var(--primary-accent);
+        }
+
+        .developer-contact {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .developer-contact i {
+            margin-right: 10px;
+            width: 20px;
+            color: var(--primary-accent);
+        }
+
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: none;
+            z-index: 90;
+        }
+
+        .overlay.active {
+            display: block;
+        }
+
+        @media (max-width: 768px) {
+            .sidebar {
+                width: 100%;
+                position: absolute;
+                z-index: 20;
+                transform: translateX(-100%);
+            }
+            
+            .sidebar.active {
+                transform: translateX(0);
+            }
+            
+            .settings-panel {
+                width: 100%;
+                right: -100%;
+            }
+            
+            .menu-toggle {
+                display: block;
+            }
+        }
+
+        .menu-toggle {
+            display: none;
+            background: none;
+            border: none;
+            color: var(--text-color);
+            font-size: 1.5rem;
+            margin-right: 15px;
+            cursor: pointer;
         }
 
         .hidden {
@@ -302,425 +667,606 @@
     </style>
 </head>
 <body>
-    <div id="auth-container" class="auth-container">
-        <div class="auth-form">
-            <h2>Welcome to gram_x</h2>
-            <div id="login-form">
-                <div class="form-group">
-                    <label for="login-email">Email</label>
-                    <input type="email" id="login-email" placeholder="Enter your email">
-                </div>
-                <div class="form-group">
-                    <label for="login-password">Password</label>
-                    <input type="password" id="login-password" placeholder="Enter your password">
-                </div>
-                <button class="btn" onclick="login()">Login</button>
-                <div class="auth-switch">
-                    Don't have an account? <a onclick="showRegister()">Register</a>
-                </div>
+    <!-- Authentication Screen -->
+    <div id="authScreen" class="auth-container">
+        <div class="auth-form" id="loginForm">
+            <h2>Welcome to Gram_X</h2>
+            <div class="form-group">
+                <label for="loginUsername">Username</label>
+                <input type="text" id="loginUsername" placeholder="Enter your username">
             </div>
-            <div id="register-form" class="hidden">
-                <div class="form-group">
-                    <label for="register-username">Username</label>
-                    <input type="text" id="register-username" placeholder="Choose a username">
-                </div>
-                <div class="form-group">
-                    <label for="register-email">Email</label>
-                    <input type="email" id="register-email" placeholder="Enter your email">
-                </div>
-                <div class="form-group">
-                    <label for="register-password">Password</label>
-                    <input type="password" id="register-password" placeholder="Choose a password">
-                </div>
-                <button class="btn" onclick="register()">Register</button>
-                <div class="auth-switch">
-                    Already have an account? <a onclick="showLogin()">Login</a>
-                </div>
+            <div class="form-group">
+                <label for="loginPassword">Password</label>
+                <input type="password" id="loginPassword" placeholder="Enter your password">
+            </div>
+            <button class="auth-btn" onclick="login()">Login</button>
+            <div class="auth-switch">
+                Don't have an account? <a onclick="showRegisterForm()">Register</a>
+            </div>
+        </div>
+
+        <div class="auth-form hidden" id="registerForm">
+            <h2>Create Account</h2>
+            <div class="form-group">
+                <label for="registerUsername">Username</label>
+                <input type="text" id="registerUsername" placeholder="Choose a username">
+            </div>
+            <div class="form-group">
+                <label for="registerPhone">Phone (optional)</label>
+                <input type="text" id="registerPhone" placeholder="Your phone number">
+            </div>
+            <div class="form-group">
+                <label for="registerPassword">Password</label>
+                <input type="password" id="registerPassword" placeholder="Create a password">
+            </div>
+            <button class="auth-btn" onclick="register()">Register</button>
+            <div class="auth-switch">
+                Already have an account? <a onclick="showLoginForm()">Login</a>
             </div>
         </div>
     </div>
 
-    <div id="app-container" class="app-container hidden">
-        <div class="sidebar">
-            <div class="sidebar-header">
-                <h2>gram_x</h2>
-                <button onclick="logout()">Logout</button>
-            </div>
-            <div class="search-container">
-                <input type="text" class="search-input" placeholder="Search chats...">
-            </div>
-            <div class="chat-list" id="chat-list">
-                <!-- Chats will be populated here -->
-            </div>
+    <!-- Main Chat Interface -->
+    <div id="chatInterface" class="hidden">
+        <div class="header">
+            <button class="menu-toggle" onclick="toggleSidebar()">
+                <i class="fas fa-bars"></i>
+            </button>
+            <h1>Gram_X</h1>
+            <select class="theme-selector" id="themeSelector">
+                <option value="default">Neutral/Dark Modern</option>
+                <option value="whatsapp">WhatsApp-Inspired</option>
+                <option value="neon">Neon/Cyberpunk</option>
+            </select>
         </div>
-        
-        <div class="main-content">
-            <div class="chat-header">
-                <div class="user-avatar" id="current-chat-avatar">U</div>
-                <div class="user-info">
-                    <h3 id="current-chat-name">Select a chat</h3>
-                    <div class="user-status" id="current-chat-status">Online</div>
+
+        <div class="container">
+            <div class="sidebar">
+                <div class="user-panel">
+                    <div class="user-avatar" id="userAvatar">
+                        <span id="avatarInitials">U</span>
+                    </div>
+                    <div class="user-info">
+                        <div class="user-name" id="userName">User</div>
+                        <div class="user-status" id="userStatus">Online</div>
+                    </div>
+                    <button class="chat-action-btn" onclick="openSettings()">
+                        <i class="fas fa-cog"></i>
+                    </button>
+                </div>
+
+                <div class="search-box">
+                    <input type="text" class="search-input" placeholder="Search contacts...">
+                </div>
+
+                <div class="contacts-list" id="contactsList">
+                    <!-- Contacts will be populated here -->
                 </div>
             </div>
-            
-            <div class="messages-container" id="messages-container">
-                <div class="typing-indicator hidden" id="typing-indicator">
-                    Someone is typing...
+
+            <div class="chat-area">
+                <div class="chat-header">
+                    <div class="current-contact-avatar" id="currentContactAvatar">
+                        <span id="currentContactInitials">S</span>
+                    </div>
+                    <div class="current-contact-info">
+                        <div class="current-contact-name" id="currentContactName">Select a contact</div>
+                        <div class="current-contact-status" id="currentContactStatus">to start chatting</div>
+                    </div>
+                    <div class="chat-actions">
+                        <button class="chat-action-btn">
+                            <i class="fas fa-phone"></i>
+                        </button>
+                        <button class="chat-action-btn">
+                            <i class="fas fa-video"></i>
+                        </button>
+                        <button class="chat-action-btn">
+                            <i class="fas fa-info-circle"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="messages-container" id="messagesContainer">
+                    <!-- Messages will be displayed here -->
+                    <div class="welcome-message">
+                        <p>Welcome to Gram_X! Select a contact to start messaging.</p>
+                    </div>
+                </div>
+
+                <div class="message-input-container">
+                    <button class="input-action-btn">
+                        <i class="fas fa-paperclip"></i>
+                    </button>
+                    <textarea class="message-input" id="messageInput" placeholder="Type a message..." rows="1"></textarea>
+                    <button class="input-action-btn">
+                        <i class="fas fa-smile"></i>
+                    </button>
+                    <button class="send-btn" onclick="sendMessage()">
+                        <i class="fas fa-paper-plane"></i>
+                    </button>
                 </div>
             </div>
-            
-            <div class="input-container">
-                <input type="text" class="message-input" id="message-input" placeholder="Type a message..." disabled>
-                <button class="send-btn" onclick="sendMessage()" disabled>Send</button>
+        </div>
+
+        <!-- Settings Panel -->
+        <div class="settings-panel" id="settingsPanel">
+            <div class="settings-header">
+                <h2>Settings</h2>
+                <button class="close-settings" onclick="closeSettings()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+
+            <div class="profile-info">
+                <div class="profile-avatar" id="profileAvatar">
+                    <span id="profileInitials">U</span>
+                </div>
+                <div class="profile-name" id="profileName">User Name</div>
+                <div class="profile-bio" id="profileBio">This is my bio</div>
+                <div class="profile-status" id="profileStatus">Online</div>
+            </div>
+
+            <div class="settings-section">
+                <h3>Account</h3>
+                <div class="settings-item" onclick="editProfile()">
+                    <i class="fas fa-user-edit"></i> Edit Profile
+                </div>
+                <div class="settings-item">
+                    <i class="fas fa-lock"></i> Privacy and Security
+                </div>
+                <div class="settings-item">
+                    <i class="fas fa-bell"></i> Notifications
+                </div>
+            </div>
+
+            <div class="settings-section">
+                <h3>Chat Settings</h3>
+                <div class="settings-item">
+                    <i class="fas fa-wallpaper"></i> Chat Background
+                </div>
+                <div class="settings-item">
+                    <i class="fas fa-language"></i> Language
+                </div>
+            </div>
+
+            <div class="settings-section">
+                <h3>About</h3>
+                <div class="settings-item">
+                    <i class="fas fa-info-circle"></i> Gram_X Version 1.0
+                </div>
+                <div class="developer-info">
+                    <h4>Developer Contact</h4>
+                    <div class="developer-contact">
+                        <i class="fas fa-user"></i>
+                        <span>Bruce Bera</span>
+                    </div>
+                    <div class="developer-contact">
+                        <i class="fas fa-phone"></i>
+                        <span>+254743982206</span>
+                    </div>
+                    <div class="developer-contact">
+                        <i class="fas fa-image"></i>
+                        <span><a href="https://i.imgur.com/hwklZjP.jpeg" target="_blank">View Developer Image</a></span>
+                    </div>
+                </div>
             </div>
         </div>
+
+        <div class="overlay" id="overlay" onclick="closeSettings()"></div>
     </div>
 
+    <script src="/socket.io/socket.io.js"></script>
     <script>
-        let socket = null;
+        // DOM Elements
+        const themeSelector = document.getElementById('themeSelector');
+        const authScreen = document.getElementById('authScreen');
+        const chatInterface = document.getElementById('chatInterface');
+        const loginForm = document.getElementById('loginForm');
+        const registerForm = document.getElementById('registerForm');
+        const contactsList = document.getElementById('contactsList');
+        const messagesContainer = document.getElementById('messagesContainer');
+        const messageInput = document.getElementById('messageInput');
+        const settingsPanel = document.getElementById('settingsPanel');
+        const overlay = document.getElementById('overlay');
+        const userAvatar = document.getElementById('userAvatar');
+        const userName = document.getElementById('userName');
+        const userStatus = document.getElementById('userStatus');
+        const currentContactAvatar = document.getElementById('currentContactAvatar');
+        const currentContactName = document.getElementById('currentContactName');
+        const currentContactStatus = document.getElementById('currentContactStatus');
+        const profileAvatar = document.getElementById('profileAvatar');
+        const profileName = document.getElementById('profileName');
+        const profileBio = document.getElementById('profileBio');
+        const profileStatus = document.getElementById('profileStatus');
+
+        // Global variables
+        let socket;
         let currentUser = null;
-        let currentChat = null;
-        let chats = [];
-        let authToken = '';
+        let currentContact = null;
+        let contacts = [];
+        let messages = {};
 
-        // DOM elements
-        const authContainer = document.getElementById('auth-container');
-        const appContainer = document.getElementById('app-container');
-        const loginForm = document.getElementById('login-form');
-        const registerForm = document.getElementById('register-form');
-        const chatList = document.getElementById('chat-list');
-        const messagesContainer = document.getElementById('messages-container');
-        const messageInput = document.getElementById('message-input');
-        const sendButton = document.querySelector('.send-btn');
-        const typingIndicator = document.getElementById('typing-indicator');
-        const currentChatName = document.getElementById('current-chat-name');
-        const currentChatAvatar = document.getElementById('current-chat-avatar');
-        const currentChatStatus = document.getElementById('current-chat-status');
+        // Initialize the application
+        function init() {
+            // Check if user is logged in
+            const token = localStorage.getItem('token');
+            if (token) {
+                // Validate token with server
+                fetch('/api/user/me', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                })
+                .then(response => {
+                    if (response.ok) {
+                        return response.json();
+                    } else {
+                        throw new Error('Invalid token');
+                    }
+                })
+                .then(user => {
+                    currentUser = user;
+                    showChatInterface();
+                    connectSocket();
+                    loadContacts();
+                    updateProfileInfo();
+                })
+                .catch(error => {
+                    console.error('Token validation failed:', error);
+                    localStorage.removeItem('token');
+                    showAuthScreen();
+                });
+            } else {
+                showAuthScreen();
+            }
 
-        // Auth functions
-        function showRegister() {
+            // Theme selector event listener
+            themeSelector.addEventListener('change', (e) => {
+                document.body.setAttribute('data-theme', e.target.value);
+            });
+
+            // Message input auto-resize
+            messageInput.addEventListener('input', function() {
+                this.style.height = 'auto';
+                this.style.height = (this.scrollHeight) + 'px';
+            });
+
+            // Send message on Enter key (but allow Shift+Enter for new line)
+            messageInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    sendMessage();
+                }
+            });
+        }
+
+        // Authentication functions
+        function showAuthScreen() {
+            authScreen.classList.remove('hidden');
+            chatInterface.classList.add('hidden');
+        }
+
+        function showChatInterface() {
+            authScreen.classList.add('hidden');
+            chatInterface.classList.remove('hidden');
+        }
+
+        function showLoginForm() {
+            loginForm.classList.remove('hidden');
+            registerForm.classList.add('hidden');
+        }
+
+        function showRegisterForm() {
             loginForm.classList.add('hidden');
             registerForm.classList.remove('hidden');
         }
 
-        function showLogin() {
-            registerForm.classList.add('hidden');
-            loginForm.classList.remove('hidden');
-        }
+        function login() {
+            const username = document.getElementById('loginUsername').value;
+            const password = document.getElementById('loginPassword').value;
 
-        async function register() {
-            const username = document.getElementById('register-username').value;
-            const email = document.getElementById('register-email').value;
-            const password = document.getElementById('register-password').value;
-
-            try {
-                const response = await fetch('/api/auth/register', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ username, email, password })
-                });
-
-                const data = await response.json();
-                
-                if (response.ok) {
-                    authToken = data.accessToken;
+            fetch('/api/login', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ username, password })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.token) {
+                    localStorage.setItem('token', data.token);
                     currentUser = data.user;
-                    initializeApp();
+                    showChatInterface();
+                    connectSocket();
+                    loadContacts();
+                    updateProfileInfo();
                 } else {
-                    alert(data.message || 'Registration failed');
+                    alert('Login failed: ' + data.error);
                 }
-            } catch (error) {
-                alert('Registration error: ' + error.message);
-            }
-        }
-
-        async function login() {
-            const email = document.getElementById('login-email').value;
-            const password = document.getElementById('login-password').value;
-
-            try {
-                const response = await fetch('/api/auth/login', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ email, password })
-                });
-
-                const data = await response.json();
-                
-                if (response.ok) {
-                    authToken = data.accessToken;
-                    currentUser = data.user;
-                    initializeApp();
-                } else {
-                    alert(data.message || 'Login failed');
-                }
-            } catch (error) {
-                alert('Login error: ' + error.message);
-            }
-        }
-
-        function logout() {
-            if (socket) {
-                socket.disconnect();
-            }
-            authToken = '';
-            currentUser = null;
-            currentChat = null;
-            chats = [];
-            
-            authContainer.classList.remove('hidden');
-            appContainer.classList.add('hidden');
-        }
-
-        // App initialization
-        function initializeApp() {
-            authContainer.classList.add('hidden');
-            appContainer.classList.remove('hidden');
-            
-            // Initialize Socket.IO
-            socket = io({
-                auth: {
-                    token: authToken
-                }
+            })
+            .catch(error => {
+                console.error('Login error:', error);
+                alert('Login failed. Please try again.');
             });
-
-            setupSocketListeners();
-            loadChats();
-            loadUserProfile();
         }
 
-        function setupSocketListeners() {
+        function register() {
+            const username = document.getElementById('registerUsername').value;
+            const phone = document.getElementById('registerPhone').value;
+            const password = document.getElementById('registerPassword').value;
+
+            fetch('/api/register', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ username, phone, password })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.token) {
+                    localStorage.setItem('token', data.token);
+                    currentUser = data.user;
+                    showChatInterface();
+                    connectSocket();
+                    loadContacts();
+                    updateProfileInfo();
+                } else {
+                    alert('Registration failed: ' + data.error);
+                }
+            })
+            .catch(error => {
+                console.error('Registration error:', error);
+                alert('Registration failed. Please try again.');
+            });
+        }
+
+        // Socket.io functions
+        function connectSocket() {
+            socket = io();
+            
             socket.on('connect', () => {
                 console.log('Connected to server');
+                socket.emit('join', currentUser.id);
             });
 
-            socket.on('disconnect', () => {
-                console.log('Disconnected from server');
+            socket.on('receiveMessage', (message) => {
+                addMessageToUI(message, false);
+                // Update contact list with last message
+                updateContactLastMessage(message);
             });
 
-            socket.on('new-message', (message) => {
-                if (currentChat && currentChat._id === message.chat) {
-                    addMessageToUI(message);
-                }
-                updateChatList();
-            });
-
-            socket.on('message-delivered', (data) => {
-                console.log('Message delivered:', data);
-            });
-
-            socket.on('message-read', (data) => {
-                console.log('Message read:', data);
-            });
-
-            socket.on('user-typing', (data) => {
-                if (currentChat && currentChat._id === data.chatId) {
-                    typingIndicator.classList.remove('hidden');
-                }
-            });
-
-            socket.on('user-stop-typing', (data) => {
-                if (currentChat && currentChat._id === data.chatId) {
-                    typingIndicator.classList.add('hidden');
-                }
+            socket.on('messageSent', (message) => {
+                // Message was successfully sent and saved
+                addMessageToUI(message, true);
             });
 
             socket.on('error', (error) => {
                 console.error('Socket error:', error);
-                alert(error.message);
+                alert('Error: ' + error.message);
             });
         }
 
-        async function loadUserProfile() {
-            try {
-                const response = await fetch('/api/users/me', {
-                    headers: {
-                        'Authorization': `Bearer ${authToken}`
-                    }
-                });
-                
-                if (response.ok) {
-                    const data = await response.json();
-                    currentUser = data.user;
+        // Contact and message functions
+        function loadContacts() {
+            fetch('/api/users', {
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`
                 }
-            } catch (error) {
-                console.error('Failed to load user profile:', error);
-            }
+            })
+            .then(response => response.json())
+            .then(users => {
+                contacts = users;
+                renderContacts(users);
+            })
+            .catch(error => {
+                console.error('Failed to load contacts:', error);
+            });
         }
 
-        async function loadChats() {
-            try {
-                const response = await fetch('/api/chats', {
-                    headers: {
-                        'Authorization': `Bearer ${authToken}`
-                    }
-                });
-                
-                if (response.ok) {
-                    chats = await response.json();
-                    renderChatList();
-                }
-            } catch (error) {
-                console.error('Failed to load chats:', error);
-            }
-        }
-
-        function renderChatList() {
-            chatList.innerHTML = '';
+        function renderContacts(contacts) {
+            contactsList.innerHTML = '';
             
-            chats.forEach(chat => {
-                const chatElement = document.createElement('div');
-                chatElement.className = 'chat-item';
-                chatElement.onclick = () => selectChat(chat);
+            contacts.forEach(contact => {
+                const contactEl = document.createElement('div');
+                contactEl.className = 'contact';
+                contactEl.dataset.id = contact._id;
                 
-                const chatName = chat.isGroup ? 
-                    chat.name : 
-                    chat.participants.find(p => p._id !== currentUser.id)?.displayName || 
-                    chat.participants.find(p => p._id !== currentUser.id)?.username;
+                // Generate initials for avatar
+                const initials = contact.profile.firstName && contact.profile.lastName 
+                    ? `${contact.profile.firstName[0]}${contact.profile.lastName[0]}` 
+                    : contact.username[0].toUpperCase();
                 
-                const lastMessage = chat.lastMessage ? 
-                    (chat.lastMessage.type === 'text' ? 
-                        chat.lastMessage.content.text : 
-                        `[${chat.lastMessage.type}]`) : 
-                    'No messages yet';
-                
-                chatElement.innerHTML = `
-                    <div class="chat-info">
-                        <div>
-                            <div class="chat-name">${chatName}</div>
-                            <div class="chat-preview">${lastMessage}</div>
-                        </div>
-                        <div class="chat-time">${formatTime(chat.updatedAt)}</div>
+                contactEl.innerHTML = `
+                    <div class="contact-avatar">
+                        <span>${initials}</span>
+                        <div class="online-indicator"></div>
+                    </div>
+                    <div class="contact-info">
+                        <div class="contact-name">${contact.username}</div>
+                        <div class="contact-preview">Start a conversation</div>
+                        <div class="contact-time">Just now</div>
                     </div>
                 `;
                 
-                chatList.appendChild(chatElement);
+                contactEl.addEventListener('click', () => selectContact(contact));
+                contactsList.appendChild(contactEl);
             });
         }
 
-        async function selectChat(chat) {
-            currentChat = chat;
+        function selectContact(contact) {
+            currentContact = contact;
             
             // Update UI
-            const chatName = chat.isGroup ? 
-                chat.name : 
-                chat.participants.find(p => p._id !== currentUser.id)?.displayName || 
-                chat.participants.find(p => p._id !== currentUser.id)?.username;
+            document.querySelectorAll('.contact').forEach(el => {
+                el.classList.remove('active');
+                if (el.dataset.id === contact._id) {
+                    el.classList.add('active');
+                }
+            });
             
-            currentChatName.textContent = chatName;
-            currentChatAvatar.textContent = chatName.charAt(0).toUpperCase();
+            // Generate initials for avatar
+            const initials = contact.profile.firstName && contact.profile.lastName 
+                ? `${contact.profile.firstName[0]}${contact.profile.lastName[0]}` 
+                : contact.username[0].toUpperCase();
             
-            const otherUser = chat.participants.find(p => p._id !== currentUser.id);
-            if (otherUser) {
-                currentChatStatus.textContent = otherUser.isOnline ? 'Online' : `Last seen ${formatTime(otherUser.lastSeen)}`;
-                currentChatStatus.className = otherUser.isOnline ? 'user-status online' : 'user-status';
-            }
-            
-            // Enable message input
-            messageInput.disabled = false;
-            sendButton.disabled = false;
-            
-            // Join chat room
-            socket.emit('join-chat', chat._id);
+            currentContactAvatar.innerHTML = `<span>${initials}</span>`;
+            currentContactName.textContent = contact.username;
+            currentContactStatus.textContent = 'Online';
             
             // Load messages
-            await loadMessages();
+            loadMessages(contact._id);
         }
 
-        async function loadMessages() {
-            try {
-                const response = await fetch(`/api/chats/${currentChat._id}/messages`, {
-                    headers: {
-                        'Authorization': `Bearer ${authToken}`
-                    }
-                });
-                
-                if (response.ok) {
-                    const messages = await response.json();
-                    renderMessages(messages);
+        function loadMessages(contactId) {
+            fetch(`/api/messages/${contactId}`, {
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`
                 }
-            } catch (error) {
+            })
+            .then(response => response.json())
+            .then(messages => {
+                renderMessages(messages);
+            })
+            .catch(error => {
                 console.error('Failed to load messages:', error);
-            }
+            });
         }
 
         function renderMessages(messages) {
             messagesContainer.innerHTML = '';
             
+            if (messages.length === 0) {
+                messagesContainer.innerHTML = `
+                    <div class="welcome-message">
+                        <p>No messages yet. Start a conversation with ${currentContact.username}!</p>
+                    </div>
+                `;
+                return;
+            }
+            
             messages.forEach(message => {
-                addMessageToUI(message);
+                const isSent = message.sender._id === currentUser.id;
+                addMessageToUI(message, isSent);
             });
             
             // Scroll to bottom
             messagesContainer.scrollTop = messagesContainer.scrollHeight;
         }
 
-        function addMessageToUI(message) {
-            const messageElement = document.createElement('div');
-            const isSent = message.sender._id === currentUser.id;
+        function addMessageToUI(message, isSent) {
+            const messageEl = document.createElement('div');
+            messageEl.className = `message ${isSent ? 'sent' : 'received'}`;
             
-            messageElement.className = `message ${isSent ? 'sent' : 'received'}`;
-            messageElement.innerHTML = `
-                <div class="message-content">${message.content.text}</div>
-                <div class="message-time">${formatTime(message.createdAt)}</div>
+            const time = new Date(message.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            
+            messageEl.innerHTML = `
+                <div class="message-content">${message.content}</div>
+                <div class="message-time">${time}</div>
             `;
             
-            messagesContainer.appendChild(messageElement);
+            messagesContainer.appendChild(messageEl);
             
-            // Scroll to bottom if this is the latest message
-            if (isSent || message.chat === currentChat?._id) {
-                messagesContainer.scrollTop = messagesContainer.scrollHeight;
-            }
+            // Scroll to bottom
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
         }
 
         function sendMessage() {
-            const content = messageInput.value.trim();
-            if (!content || !currentChat) return;
+            if (!currentContact || !messageInput.value.trim()) return;
             
-            socket.emit('send-message', {
-                chatId: currentChat._id,
-                content: { text: content },
-                type: 'text'
+            const content = messageInput.value.trim();
+            
+            socket.emit('sendMessage', {
+                senderId: currentUser.id,
+                receiverId: currentContact._id,
+                content
             });
             
+            // Clear input
             messageInput.value = '';
+            messageInput.style.height = 'auto';
         }
 
-        function updateChatList() {
-            loadChats();
-        }
-
-        function formatTime(timestamp) {
-            const date = new Date(timestamp);
-            return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-        }
-
-        // Event listeners
-        messageInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
-                sendMessage();
-            }
-        });
-
-        messageInput.addEventListener('input', () => {
-            if (currentChat) {
-                socket.emit('typing-start', { chatId: currentChat._id });
+        function updateContactLastMessage(message) {
+            const contactEl = document.querySelector(`.contact[data-id="${message.sender._id}"]`);
+            if (contactEl) {
+                const preview = contactEl.querySelector('.contact-preview');
+                const time = contactEl.querySelector('.contact-time');
                 
-                // Clear previous timeout
-                if (window.typingTimeout) {
-                    clearTimeout(window.typingTimeout);
-                }
-                
-                // Set new timeout to stop typing indicator
-                window.typingTimeout = setTimeout(() => {
-                    socket.emit('typing-stop', { chatId: currentChat._id });
-                }, 1000);
+                preview.textContent = message.content;
+                time.textContent = new Date(message.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
             }
-        });
+        }
+
+        // Settings functions
+        function openSettings() {
+            settingsPanel.classList.add('open');
+            overlay.classList.add('active');
+        }
+
+        function closeSettings() {
+            settingsPanel.classList.remove('open');
+            overlay.classList.remove('active');
+        }
+
+        function updateProfileInfo() {
+            if (!currentUser) return;
+            
+            // Generate initials for avatar
+            const initials = currentUser.profile.firstName && currentUser.profile.lastName 
+                ? `${currentUser.profile.firstName[0]}${currentUser.profile.lastName[0]}` 
+                : currentUser.username[0].toUpperCase();
+            
+            // Update user panel
+            userAvatar.innerHTML = `<span>${initials}</span>`;
+            userName.textContent = currentUser.username;
+            userStatus.textContent = 'Online';
+            
+            // Update profile in settings
+            profileAvatar.innerHTML = `<span>${initials}</span>`;
+            profileName.textContent = currentUser.username;
+            profileBio.textContent = currentUser.profile.bio || 'No bio set';
+            profileStatus.textContent = 'Online';
+        }
+
+        function editProfile() {
+            const firstName = prompt('First Name', currentUser.profile.firstName || '');
+            const lastName = prompt('Last Name', currentUser.profile.lastName || '');
+            const bio = prompt('Bio', currentUser.profile.bio || '');
+            
+            if (firstName !== null) {
+                fetch('/api/user/profile', {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    },
+                    body: JSON.stringify({ firstName, lastName, bio })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.profile) {
+                        currentUser.profile = data.profile;
+                        updateProfileInfo();
+                        alert('Profile updated successfully');
+                    } else {
+                        alert('Failed to update profile: ' + data.error);
+                    }
+                })
+                .catch(error => {
+                    console.error('Profile update error:', error);
+                    alert('Failed to update profile');
+                });
+            }
+        }
+
+        function toggleSidebar() {
+            document.querySelector('.sidebar').classList.toggle('active');
+        }
+
+        // Initialize the app when the page loads
+        document.addEventListener('DOMContentLoaded', init);
     </script>
 </body>
 </html>
