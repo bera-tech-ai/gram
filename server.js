@@ -410,7 +410,7 @@ app.post('/api/groups', authenticateToken, async (req, res) => {
       description,
       admin: req.user.userId,
       members: [...members, req.user.userId]
-    );
+    });
     
     await group.save();
     await group.populate('members', 'username profile');
