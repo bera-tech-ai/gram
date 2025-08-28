@@ -3,11 +3,38 @@ const http = require('http');
 const socketIo = require('socket.io');
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
 const cors = require('cors');
 const path = require('path');
 const multer = require('multer');
 require('dotenv').config();
+
+// Simple JWT implementation as fallback
+const crypto = require('crypto');
+const JWT = {
+  sign: (payload, secret) => {
+    const header = { alg: 'HS256', typ: 'JWT' };
+    const encodedHeader = Buffer.from(JSON.stringify(header)).toString('base64url');
+    const encodedPayload = Buffer.from(JSON.stringify(payload)).toString('base64url');
+    const signature = crypto.createHmac('sha256', secret)
+      .update(encodedHeader + '.' + encodedPayload)
+      .digest('base64url');
+    return encodedHeader + '.' + encodedPayload + '.' + signature;
+  },
+  verify: (token, secret) => {
+    try {
+      const [encodedHeader, encodedPayload, signature] = token.split('.');
+      const expectedSignature = crypto.createHmac('sha256', secret)
+        .update(encodedHeader + '.' + encodedPayload)
+        .digest('base64url');
+      
+      if (signature !== expectedSignature) throw new Error('Invalid signature');
+      
+      return JSON.parse(Buffer.from(encodedPayload, 'base64url').toString());
+    } catch (error) {
+      throw new Error('Invalid token');
+    }
+  }
+};
 
 const app = express();
 const server = http.createServer(app);
@@ -50,10 +77,11 @@ mongoose.connect(MONGODB_URI, {
 .then(() => console.log('Connected to MongoDB'))
 .catch(err => console.error('MongoDB connection error:', err));
 
-// User Schema - FIXED: Removed email field to prevent duplicate key error
+// User Schema - FIXED: Added email field but made it optional with a default value
 const userSchema = new mongoose.Schema({
   username: { type: String, required: true, unique: true },
   password: { type: String, required: true },
+  email: { type: String, default: "no-email-provided", index: true }, // Default value to avoid null issues
   phone: { type: String, unique: true, sparse: true },
   profile: {
     firstName: String,
@@ -107,7 +135,7 @@ const Group = mongoose.model('Group', groupSchema);
 const GroupMessage = mongoose.model('GroupMessage', groupMessageSchema);
 
 // JWT Secret
-const JWT_SECRET = process.env.JWT_SECRET || 'your_jwt_secret_key';
+const JWT_SECRET = process.env.JWT_SECRET || 'your_jwt_secret_key_change_this_in_production';
 
 // Authentication middleware
 const authenticateToken = (req, res, next) => {
@@ -118,13 +146,13 @@ const authenticateToken = (req, res, next) => {
     return res.status(401).json({ error: 'Access token required' });
   }
 
-  jwt.verify(token, JWT_SECRET, (err, user) => {
-    if (err) {
-      return res.status(403).json({ error: 'Invalid token' });
-    }
+  try {
+    const user = JWT.verify(token, JWT_SECRET);
     req.user = user;
     next();
-  });
+  } catch (error) {
+    return res.status(403).json({ error: 'Invalid token' });
+  }
 };
 
 // Routes
@@ -150,10 +178,11 @@ app.post('/api/register', async (req, res) => {
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
     
-    // Create user
+    // Create user with a unique email based on username to avoid duplicate key error
     const user = new User({
       username,
       password: hashedPassword,
+      email: `${username}@gram-x.com`, // Create a unique email based on username
       phone: phone || undefined,
       profile: {
         firstName: '',
@@ -166,7 +195,7 @@ app.post('/api/register', async (req, res) => {
     await user.save();
     
     // Generate token
-    const token = jwt.sign({ userId: user._id }, JWT_SECRET);
+    const token = JWT.sign({ userId: user._id }, JWT_SECRET);
     
     res.status(201).json({ 
       message: 'User created successfully', 
@@ -180,6 +209,43 @@ app.post('/api/register', async (req, res) => {
   } catch (error) {
     if (error.code === 11000) {
       // Handle duplicate key error
+      if (error.keyValue && error.keyValue.email) {
+        // If it's an email duplicate, try again with a different email
+        try {
+          const { username, password, phone } = req.body;
+          const hashedPassword = await bcrypt.hash(password, 10);
+          
+          const user = new User({
+            username,
+            password: hashedPassword,
+            email: `${username}-${Date.now()}@gram-x.com`, // Add timestamp to make it unique
+            phone: phone || undefined,
+            profile: {
+              firstName: '',
+              lastName: '',
+              bio: '',
+              avatar: ''
+            }
+          });
+          
+          await user.save();
+          
+          const token = JWT.sign({ userId: user._id }, JWT_SECRET);
+          
+          return res.status(201).json({ 
+            message: 'User created successfully', 
+            token,
+            user: {
+              id: user._id,
+              username: user.username,
+              profile: user.profile
+            }
+          });
+        } catch (retryError) {
+          return res.status(500).json({ error: 'Registration failed. Please try again.' });
+        }
+      }
+      
       const field = Object.keys(error.keyValue)[0];
       res.status(400).json({ error: `${field} already exists` });
     } else {
@@ -210,7 +276,7 @@ app.post('/api/login', async (req, res) => {
     await user.save();
     
     // Generate token
-    const token = jwt.sign({ userId: user._id }, JWT_SECRET);
+    const token = JWT.sign({ userId: user._id }, JWT_SECRET);
     
     res.json({ 
       message: 'Login successful', 
@@ -344,7 +410,7 @@ app.post('/api/groups', authenticateToken, async (req, res) => {
       description,
       admin: req.user.userId,
       members: [...members, req.user.userId]
-    });
+    );
     
     await group.save();
     await group.populate('members', 'username profile');
