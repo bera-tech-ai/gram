@@ -8,7 +8,7 @@ const path = require('path');
 const multer = require('multer');
 require('dotenv').config();
 
-// Simple JWT implementation as fallback
+// Simple JWT implementation
 const crypto = require('crypto');
 const JWT = {
   sign: (payload, secret) => {
@@ -77,11 +77,10 @@ mongoose.connect(MONGODB_URI, {
 .then(() => console.log('Connected to MongoDB'))
 .catch(err => console.error('MongoDB connection error:', err));
 
-// User Schema - FIXED: Added email field but made it optional with a default value
+// User Schema
 const userSchema = new mongoose.Schema({
   username: { type: String, required: true, unique: true },
   password: { type: String, required: true },
-  email: { type: String, default: "no-email-provided", index: true }, // Default value to avoid null issues
   phone: { type: String, unique: true, sparse: true },
   profile: {
     firstName: String,
@@ -103,7 +102,7 @@ const messageSchema = new mongoose.Schema({
   content: { type: String, required: true },
   timestamp: { type: Date, default: Date.now },
   read: { type: Boolean, default: false },
-  type: { type: String, default: 'text' }, // text, image, file, audio
+  type: { type: String, default: 'text' },
   fileUrl: String,
   fileName: String
 });
@@ -178,11 +177,10 @@ app.post('/api/register', async (req, res) => {
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
     
-    // Create user with a unique email based on username to avoid duplicate key error
+    // Create user
     const user = new User({
       username,
       password: hashedPassword,
-      email: `${username}@gram-x.com`, // Create a unique email based on username
       phone: phone || undefined,
       profile: {
         firstName: '',
@@ -208,44 +206,6 @@ app.post('/api/register', async (req, res) => {
     });
   } catch (error) {
     if (error.code === 11000) {
-      // Handle duplicate key error
-      if (error.keyValue && error.keyValue.email) {
-        // If it's an email duplicate, try again with a different email
-        try {
-          const { username, password, phone } = req.body;
-          const hashedPassword = await bcrypt.hash(password, 10);
-          
-          const user = new User({
-            username,
-            password: hashedPassword,
-            email: `${username}-${Date.now()}@gram-x.com`, // Add timestamp to make it unique
-            phone: phone || undefined,
-            profile: {
-              firstName: '',
-              lastName: '',
-              bio: '',
-              avatar: ''
-            }
-          });
-          
-          await user.save();
-          
-          const token = JWT.sign({ userId: user._id }, JWT_SECRET);
-          
-          return res.status(201).json({ 
-            message: 'User created successfully', 
-            token,
-            user: {
-              id: user._id,
-              username: user.username,
-              profile: user.profile
-            }
-          });
-        } catch (retryError) {
-          return res.status(500).json({ error: 'Registration failed. Please try again.' });
-        }
-      }
-      
       const field = Object.keys(error.keyValue)[0];
       res.status(400).json({ error: `${field} already exists` });
     } else {
@@ -363,10 +323,60 @@ app.post('/api/user/avatar', authenticateToken, upload.single('avatar'), async (
   }
 });
 
+// Get all users (for contact discovery)
 app.get('/api/users', authenticateToken, async (req, res) => {
   try {
     const users = await User.find({ _id: { $ne: req.user.userId } }).select('-password');
     res.json(users);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Search users by username
+app.get('/api/users/search/:query', authenticateToken, async (req, res) => {
+  try {
+    const query = req.params.query;
+    const users = await User.find({
+      _id: { $ne: req.user.userId },
+      username: { $regex: query, $options: 'i' }
+    }).select('-password').limit(10);
+    
+    res.json(users);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Add contact
+app.post('/api/contacts/:userId', authenticateToken, async (req, res) => {
+  try {
+    const user = await User.findById(req.user.userId);
+    const contactToAdd = await User.findById(req.params.userId);
+    
+    if (!contactToAdd) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    
+    // Check if already in contacts
+    if (user.contacts.includes(contactToAdd._id)) {
+      return res.status(400).json({ error: 'User already in contacts' });
+    }
+    
+    user.contacts.push(contactToAdd._id);
+    await user.save();
+    
+    res.json({ message: 'Contact added successfully', contact: contactToAdd });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Get user contacts
+app.get('/api/contacts', authenticateToken, async (req, res) => {
+  try {
+    const user = await User.findById(req.user.userId).populate('contacts', 'username profile isOnline');
+    res.json(user.contacts);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
