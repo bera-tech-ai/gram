@@ -5,172 +5,372 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>BeraStream</title>
   <style>
-    /* Global Netflix-like Dark Theme */
+    * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
-      margin: 0;
-      font-family: Arial, sans-serif;
       background-color: #0D0D0D;
-      color: #fff;
+      color: #FFFFFF;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      padding-bottom: 90px;
     }
-
     header {
       display: flex;
-      justify-content: space-between;
       align-items: center;
-      padding: 15px 25px;
-      background: rgba(0, 0, 0, 0.9);
+      justify-content: space-between;
+      padding: 10px 15px;
+      background-color: #0D0D0D;
+      border-bottom: 1px solid #222;
       position: sticky;
       top: 0;
       z-index: 1000;
     }
-
-    header .logo {
-      font-size: 1.5rem;
-      font-weight: bold;
-      color: #E50914;
+    header h1 {
       display: flex;
       align-items: center;
-    }
-
-    header .logo span {
-      margin-left: 8px;
-      color: white;
-    }
-
-    header input {
-      padding: 8px 12px;
-      border-radius: 5px;
-      border: none;
-      outline: none;
-    }
-
-    header button {
-      background: #E50914;
-      color: white;
-      border: none;
-      padding: 8px 16px;
-      border-radius: 5px;
-      cursor: pointer;
+      font-size: 1.4rem;
+      color: #E50914;
       font-weight: bold;
     }
-
-    .section {
-      padding: 20px;
+    header img {
+      width: 30px;
+      margin-right: 8px;
+      border-radius: 50%;
     }
-
-    .section h2 {
-      margin-bottom: 15px;
+    header .search {
+      flex: 1;
+      margin: 0 10px;
     }
-
-    .grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-      gap: 15px;
+    header input {
+      width: 100%;
+      padding: 6px 10px;
+      border: none;
+      border-radius: 20px;
+      outline: none;
     }
-
+    .vip-btn {
+      background-color: #E50914;
+      color: #fff;
+      border: none;
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-weight: bold;
+      box-shadow: 0 0 10px #E50914;
+    }
+    section { padding: 15px; }
+    section h2 {
+      font-size: 1.2rem;
+      margin-bottom: 10px;
+      border-left: 4px solid #E50914;
+      padding-left: 8px;
+    }
+    .carousel {
+      display: flex;
+      overflow-x: auto;
+      gap: 10px;
+      scroll-behavior: smooth;
+    }
+    .carousel::-webkit-scrollbar { display: none; }
     .card {
-      background: #1a1a1a;
-      border-radius: 8px;
+      min-width: 140px;
+      background-color: #1A1A1A;
+      border-radius: 12px;
       overflow: hidden;
-      cursor: pointer;
-      transition: transform 0.2s;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+      text-align: center;
+      flex-shrink: 0;
     }
-
-    .card:hover {
-      transform: scale(1.05);
-    }
-
-    .card img {
+    .card img, .card video {
       width: 100%;
       height: 200px;
       object-fit: cover;
     }
-
-    .card .info {
+    .card p {
+      padding: 5px;
+      font-size: 0.9rem;
+    }
+    .btn {
+      background-color: #E50914;
+      color: white;
+      border: none;
+      padding: 5px 8px;
+      margin: 5px;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+    nav {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      background-color: #0D0D0D;
+      border-top: 1px solid #222;
+      display: flex;
+      justify-content: space-around;
+      padding: 8px 0;
+      z-index: 1000;
+    }
+    nav button {
+      background: none;
+      border: none;
+      color: white;
+      font-size: 0.8rem;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .vip-section {
+      background-color: #E50914;
+      color: white;
       padding: 10px;
       text-align: center;
+      font-weight: bold;
+      box-shadow: 0 0 10px #E50914;
+      margin: 10px 0;
+      border-radius: 10px;
     }
-
     footer {
       text-align: center;
       padding: 20px;
-      background: #111;
-      color: #aaa;
-      margin-top: 40px;
+      font-size: 0.8rem;
+      color: #ccc;
+    }
+    .hidden { display: none; }
+    .age-gate-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.85);
+      color: white;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 2000;
+      font-size: 1.2rem;
+      text-align: center;
+      padding: 20px;
+    }
+    .age-gate-buttons button {
+      background-color: #E50914;
+      border: none;
+      color: white;
+      padding: 10px 20px;
+      margin: 10px;
+      border-radius: 8px;
+      font-size: 1rem;
+      cursor: pointer;
+    }
+    @media (min-width: 768px) {
+      .carousel {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 15px;
+      }
+      .card { min-width: auto; }
     }
   </style>
 </head>
 <body>
-  <header>
-    <div class="logo">B<span>BeraStream</span></div>
-    <input id="searchInput" type="text" placeholder="Search movies, music, AI..." />
-    <button onclick="searchMovies()">Search</button>
-    <button>VIP</button>
-  </header>
 
-  <div class="section">
-    <h2>Trending Movies</h2>
-    <div id="movies" class="grid"></div>
+<header>
+  <h1><img src="https://files.catbox.moe/0bg31o.jpg" alt="B">BeraStream</h1>
+  <div class="search"><input type="text" placeholder="Search..."></div>
+  <button class="vip-btn">VIP</button>
+</header>
+
+<div class="vip-section">
+  Go Ad-Free + Unlock Exclusive Movies & Music <button class="btn">Upgrade</button>
+</div>
+
+<section id="movies">
+  <h2>Movies</h2>
+  <div class="carousel" id="movies-list"></div>
+</section>
+
+<section id="music">
+  <h2>Music</h2>
+  <div class="carousel" id="music-list"></div>
+</section>
+
+<section id="youtube">
+  <h2>YouTube</h2>
+  <div class="carousel" id="youtube-list"></div>
+</section>
+
+<section id="tiktok">
+  <h2>TikTok</h2>
+  <input type="text" id="tiktok-url" placeholder="Paste TikTok link..." style="width:100%;padding:8px;border-radius:8px;">
+  <button class="btn" onclick="downloadTikTok()">Download</button>
+  <div class="carousel" id="tiktok-list"></div>
+</section>
+
+<section id="ai-chat">
+  <h2>AI Chat</h2>
+  <input type="text" id="ai-input" placeholder="Ask me anything..." style="width:100%;padding:8px;border-radius:8px;">
+  <div id="ai-response" style="margin-top:10px;"></div>
+</section>
+
+<section id="ai-vision">
+  <h2>AI Vision</h2>
+  <input type="text" id="vision-url" placeholder="Image URL..." style="width:100%;padding:8px;border-radius:8px;">
+  <input type="text" id="vision-prompt" placeholder="Describe what you want..." style="width:100%;padding:8px;border-radius:8px;margin-top:5px;">
+  <button class="btn" onclick="runVision()">Analyze</button>
+  <div id="vision-response" style="margin-top:10px;"></div>
+</section>
+
+<section id="ai-image">
+  <h2>AI Image Generator</h2>
+  <input type="text" id="image-prompt" placeholder="Enter prompt..." style="width:100%;padding:8px;border-radius:8px;">
+  <button class="btn" onclick="generateImage()">Generate</button>
+  <div class="carousel" id="image-results"></div>
+</section>
+
+<section id="adult" class="hidden">
+  <h2>Adult 18+</h2>
+  <input type="text" id="adult-query" placeholder="Search..." style="width:100%;padding:8px;border-radius:8px;">
+  <button class="btn" onclick="searchAdult()">Search</button>
+  <div class="carousel" id="adult-list"></div>
+</section>
+
+<footer>
+  About | Contact | Privacy | © 2025 BeraStream.<br>
+  Developed by Bruce Bera | +254743982206
+</footer>
+
+<nav>
+  <button>🏠<span>Home</span></button>
+  <button>🔍<span>Search</span></button>
+  <button>🎵<span>Music</span></button>
+  <button>🎬<span>Shorts</span></button>
+  <button>👤<span>Profile</span></button>
+  <button>🤖<span>AI</span></button>
+</nav>
+
+<!-- Age-Gate Popup -->
+<div id="age-gate" class="age-gate-overlay">
+  <div>Please confirm you're 18 years or older to access adult content:</div>
+  <div class="age-gate-buttons">
+    <button onclick="confirmAge()">I am 18+</button>
+    <button onclick="denyAge()">I am under 18</button>
   </div>
+</div>
 
-  <div class="section">
-    <h2>YouTube / TikTok</h2>
-    <input id="ytUrl" type="text" placeholder="Paste YouTube/TikTok URL" style="width:60%;padding:10px;" />
-    <button onclick="fetchYoutube()">Fetch</button>
-    <pre id="ytResult" style="background:#111;padding:10px;margin-top:10px;"></pre>
-  </div>
+<script>
+  function confirmAge() {
+    document.getElementById('age-gate').classList.add('hidden');
+    document.getElementById('adult').classList.remove('hidden');
+  }
+  function denyAge() {
+    document.getElementById('age-gate').innerHTML = '<div>Sorry, you cannot access this content.</div>';
+  }
 
-  <div class="section">
-    <h2>AI Assistant</h2>
-    <input id="aiText" type="text" placeholder="Ask me anything..." style="width:60%;padding:10px;" />
-    <button onclick="askAI()">Ask</button>
-    <pre id="aiResult" style="background:#111;padding:10px;margin-top:10px;"></pre>
-  </div>
+  async function fetchMovies() {
+    const res = await fetch('/api/movies/search?q=black panther');
+    const data = await res.json();
+    const list = document.getElementById('movies-list');
+    data.results?.forEach(movie => {
+      const card = document.createElement('div');
+      card.className = 'card';
+      card.innerHTML = `<img src="${movie.image}" alt="${movie.title}">
+        <p>${movie.title} (${movie.year})</p>
+        <button class="btn">Play</button>`;
+      list.appendChild(card);
+    });
+  }
 
-  <footer>
-    © 2025 BeraStream. Designed by Bruce Bera.
-  </footer>
+  async function fetchMusic() {
+    const res = await fetch('/api/spotify/search?q=burna boy');
+    const data = await res.json();
+    const list = document.getElementById('music-list');
+    data.results?.forEach(track => {
+      const card = document.createElement('div');
+      card.className = 'card';
+      card.innerHTML = `<img src="${track.image}" alt="${track.title}">
+        <p>${track.title}</p>
+        <button class="btn">Play</button>`;
+      list.appendChild(card);
+    });
+  }
 
-  <script>
-    async function searchMovies() {
-      const query = document.getElementById("searchInput").value;
-      const res = await fetch(`/api/movies/search?query=${encodeURIComponent(query)}`);
+  async function fetchYouTube() {
+    const res = await fetch('/api/youtube/search?q=african music');
+    const data = await res.json();
+    const list = document.getElementById('youtube-list');
+    data.results?.forEach(video => {
+      const card = document.createElement('div');
+      card.className = 'card';
+      card.innerHTML = `<img src="${video.thumbnail}" alt="${video.title}">
+        <p>${video.title}</p>
+        <button class="btn">Play</button>`;
+      list.appendChild(card);
+    });
+  }
+
+  async function downloadTikTok() {
+    const url = document.getElementById('tiktok-url').value;
+    if (!url) return alert('Paste TikTok link first!');
+    const res = await fetch('/api/tiktok/download?url=' + encodeURIComponent(url));
+    const data = await res.json();
+    const list = document.getElementById('tiktok-list');
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.innerHTML = `<video src="${data.video}" controls></video>`;
+    list.appendChild(card);
+  }
+
+  document.getElementById('ai-input').addEventListener('keypress', async (e) => {
+    if (e.key === 'Enter') {
+      const text = e.target.value;
+      const res = await fetch('/api/ai/chat?text=' + encodeURIComponent(text));
       const data = await res.json();
-      const moviesDiv = document.getElementById("movies");
-      moviesDiv.innerHTML = "";
-
-      if (!data.results) {
-        moviesDiv.innerHTML = "<p>No movies found.</p>";
-        return;
-      }
-
-      data.results.forEach(movie => {
-        const card = document.createElement("div");
-        card.className = "card";
-        card.innerHTML = `
-          <img src="${movie.poster_path || 'https://via.placeholder.com/200'}" alt="${movie.title}" />
-          <div class="info">${movie.title}</div>
-        `;
-        moviesDiv.appendChild(card);
-      });
+      document.getElementById('ai-response').innerText = data.result || 'No response';
     }
+  });
 
-    async function fetchYoutube() {
-      const url = document.getElementById("ytUrl").value;
-      const res = await fetch(`/api/youtube?url=${encodeURIComponent(url)}`);
-      const data = await res.json();
-      document.getElementById("ytResult").textContent = JSON.stringify(data, null, 2);
-    }
+  async function runVision() {
+    const url = document.getElementById('vision-url').value;
+    const prompt = document.getElementById('vision-prompt').value;
+    const res = await fetch(`/api/ai/vision?url=${encodeURIComponent(url)}&prompt=${encodeURIComponent(prompt)}`);
+    const data = await res.json();
+    document.getElementById('vision-response').innerText = data.result || 'No description';
+  }
 
-    async function askAI() {
-      const text = document.getElementById("aiText").value;
-      const res = await fetch(`/api/ai?text=${encodeURIComponent(text)}`);
-      const data = await res.json();
-      document.getElementById("aiResult").textContent = JSON.stringify(data, null, 2);
-    }
+  async function generateImage() {
+    const prompt = document.getElementById('image-prompt').value;
+    const res = await fetch('/api/ai/image?prompt=' + encodeURIComponent(prompt));
+    const data = await res.json();
+    const list = document.getElementById('image-results');
+    list.innerHTML = '';
+    data.results?.forEach(img => {
+      const card = document.createElement('div');
+      card.className = 'card';
+      card.innerHTML = `<img src="${img.url}" alt="AI Image">`;
+      list.appendChild(card);
+    });
+  }
 
-    // Auto-load trending movies on page load
-    searchMovies();
-  </script>
+  async function searchAdult() {
+    const query = document.getElementById('adult-query').value;
+    const res = await fetch('/api/adult/search?q=' + encodeURIComponent(query));
+    const data = await res.json();
+    const list = document.getElementById('adult-list');
+    list.innerHTML = '';
+    data.results?.forEach(v => {
+      const card = document.createElement('div');
+      card.className = 'card';
+      card.innerHTML = `<img src="${v.thumbnail}" alt="${v.title}">
+        <p>${v.title}</p>
+        <button class="btn">Watch</button>`;
+      list.appendChild(card);
+    });
+  }
+
+  fetchMovies();
+  fetchMusic();
+  fetchYouTube();
+</script>
+
 </body>
 </html>
