@@ -1,376 +1,1056 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>BeraStream</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>BeraStream | African Entertainment Experience</title>
+  <meta name="description" content="BeraStream - African-flavored dark entertainment platform" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body {
-      background-color: #0D0D0D;
-      color: #FFFFFF;
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      padding-bottom: 90px;
+    /* Modern CSS Reset & Variables */
+    :root {
+      --primary: #E50914;
+      --primary-dark: #b7070f;
+      --secondary: #FF9E1B;
+      --accent: #8A2BE2;
+      --dark-bg: #0D0D0D;
+      --dark-card: #121212;
+      --dark-elevated: #1A1A1A;
+      --text-primary: #FFFFFF;
+      --text-secondary: rgba(255,255,255,0.75);
+      --text-muted: rgba(255,255,255,0.6);
+      --success: #00CC66;
+      --warning: #FFCC00;
+      --border-radius: 12px;
+      --card-shadow: 0 10px 30px rgba(0,0,0,0.55);
+      --transition: all 0.3s ease;
     }
+
+    * { 
+      box-sizing: border-box; 
+      margin: 0; 
+      padding: 0; 
+    }
+    
+    html, body { 
+      height: 100%; 
+      scroll-behavior: smooth;
+    }
+    
+    body {
+      background: var(--dark-bg);
+      color: var(--text-primary);
+      font-family: 'Poppins', 'Segoe UI', Roboto, system-ui, -apple-system, 'Helvetica Neue', Arial;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      line-height: 1.6;
+      padding-bottom: 80px;
+      background-image: 
+        radial-gradient(circle at 15% 50%, rgba(229, 9, 20, 0.03) 0%, transparent 25%),
+        radial-gradient(circle at 85% 30%, rgba(138, 43, 226, 0.03) 0%, transparent 25%);
+    }
+
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+    
+    ::-webkit-scrollbar-track {
+      background: rgba(255,255,255,0.03);
+      border-radius: 10px;
+    }
+    
+    ::-webkit-scrollbar-thumb {
+      background: rgba(255,255,255,0.1);
+      border-radius: 10px;
+    }
+    
+    ::-webkit-scrollbar-thumb:hover {
+      background: rgba(255,255,255,0.2);
+    }
+
+    /* Header Styles */
     header {
+      position: sticky;
+      top: 0;
+      z-index: 1200;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 14px 20px;
+      background: linear-gradient(180deg, rgba(13,13,13,0.98), rgba(13,13,13,0.92));
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+      backdrop-filter: blur(8px);
+      box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+    }
+    
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      color: var(--primary);
+      font-weight: 800;
+      font-size: 1.25rem;
+      letter-spacing: 0.8px;
+      text-shadow: 0 2px 4px rgba(229, 9, 20, 0.3);
+    }
+    
+    .brand img {
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+      object-fit: cover;
+      box-shadow: 0 6px 18px rgba(0,0,0,0.5);
+      border: 1px solid rgba(255,255,255,0.05);
+      transition: var(--transition);
+    }
+    
+    .brand:hover img {
+      transform: rotate(5deg);
+    }
+    
+    .search-wrap {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      position: relative;
+      max-width: 720px;
+    }
+    
+    .search-wrap input {
+      width: 100%;
+      padding: 12px 46px 12px 16px;
+      border-radius: 30px;
+      border: none;
+      outline: none;
+      background: var(--dark-elevated);
+      color: var(--text-primary);
+      box-shadow: inset 0 2px 6px rgba(0,0,0,0.4);
+      font-size: 0.95rem;
+      transition: var(--transition);
+    }
+    
+    .search-wrap input:focus {
+      box-shadow: 0 0 0 2px var(--primary);
+    }
+    
+    .search-icon {
+      position: absolute;
+      right: 16px;
+      color: var(--text-muted);
+    }
+    
+    .vip-btn {
+      background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+      color: #fff;
+      border: none;
+      padding: 10px 18px;
+      border-radius: 30px;
+      font-weight: 700;
+      box-shadow: 0 6px 20px rgba(229,9,20,0.25);
+      cursor: pointer;
+      transition: var(--transition);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    
+    .vip-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(229,9,20,0.4);
+    }
+
+    /* VIP Banner */
+    .vip-banner {
+      margin: 18px 20px;
+      background: linear-gradient(90deg, var(--primary), var(--primary-dark));
+      color: white;
+      border-radius: var(--border-radius);
+      padding: 16px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      box-shadow: 0 8px 30px rgba(229,9,20,0.15);
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .vip-banner::before {
+      content: "";
+      position: absolute;
+      top: -50%;
+      left: -50%;
+      width: 200%;
+      height: 200%;
+      background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 60%);
+      transform: rotate(30deg);
+    }
+    
+    .vip-banner .cta { 
+      font-weight: 700; 
+      z-index: 1;
+    }
+    
+    .vip-banner button { 
+      z-index: 1;
+    }
+
+    /* Main Content */
+    main { 
+      padding: 10px 16px 36px; 
+    }
+    
+    section { 
+      margin: 20px 0; 
+    }
+    
+    .section-header {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 10px 15px;
-      background-color: #0D0D0D;
-      border-bottom: 1px solid #222;
-      position: sticky;
-      top: 0;
-      z-index: 1000;
+      margin-bottom: 16px;
     }
-    header h1 {
-      display: flex;
-      align-items: center;
-      font-size: 1.4rem;
-      color: #E50914;
-      font-weight: bold;
-    }
-    header img {
-      width: 30px;
-      margin-right: 8px;
-      border-radius: 50%;
-    }
-    header .search {
-      flex: 1;
-      margin: 0 10px;
-    }
-    header input {
-      width: 100%;
-      padding: 6px 10px;
-      border: none;
-      border-radius: 20px;
-      outline: none;
-    }
-    .vip-btn {
-      background-color: #E50914;
-      color: #fff;
-      border: none;
-      padding: 6px 12px;
-      border-radius: 20px;
-      font-weight: bold;
-      box-shadow: 0 0 10px #E50914;
-    }
-    section { padding: 15px; }
+    
     section h2 {
       font-size: 1.2rem;
-      margin-bottom: 10px;
-      border-left: 4px solid #E50914;
-      padding-left: 8px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding-left: 12px;
+      border-left: 4px solid var(--primary);
+      font-weight: 700;
     }
+    
+    .view-all {
+      color: var(--primary);
+      font-size: 0.9rem;
+      font-weight: 600;
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    /* Carousel */
     .carousel {
       display: flex;
+      gap: 16px;
       overflow-x: auto;
-      gap: 10px;
+      padding-bottom: 10px;
+      -webkit-overflow-scrolling: touch;
       scroll-behavior: smooth;
     }
-    .carousel::-webkit-scrollbar { display: none; }
+
+    /* Card Styles */
     .card {
-      min-width: 140px;
-      background-color: #1A1A1A;
-      border-radius: 12px;
+      background: linear-gradient(180deg, var(--dark-card), var(--dark-bg));
+      min-width: 160px;
+      width: 160px;
+      border-radius: var(--border-radius);
       overflow: hidden;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.5);
-      text-align: center;
+      box-shadow: var(--card-shadow);
       flex-shrink: 0;
+      transition: var(--transition);
+      border: 1px solid rgba(255,255,255,0.03);
+      position: relative;
     }
+    
+    .card::after {
+      content: "";
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 40%;
+      background: linear-gradient(to top, rgba(13,13,13,0.9) 0%, transparent 100%);
+      pointer-events: none;
+      opacity: 0;
+      transition: var(--transition);
+    }
+    
+    .card:hover { 
+      transform: translateY(-8px); 
+      box-shadow: 0 18px 40px rgba(0,0,0,0.7);
+    }
+    
+    .card:hover::after {
+      opacity: 1;
+    }
+    
     .card img, .card video {
+      display: block;
       width: 100%;
       height: 200px;
       object-fit: cover;
+      background: #191919;
+      transition: var(--transition);
     }
-    .card p {
-      padding: 5px;
+    
+    .card:hover img, .card:hover video {
+      transform: scale(1.05);
+    }
+    
+    .card-body {
+      padding: 12px;
       font-size: 0.9rem;
     }
-    .btn {
-      background-color: #E50914;
-      color: white;
-      border: none;
-      padding: 5px 8px;
-      margin: 5px;
-      border-radius: 8px;
-      cursor: pointer;
+    
+    .card-title {
+      font-weight: 700;
+      margin-bottom: 4px;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
     }
-    nav {
+    
+    .meta { 
+      color: var(--text-secondary); 
+      font-size: 0.82rem; 
+    }
+    
+    .card .actions { 
+      display: flex; 
+      gap: 8px; 
+      justify-content: center; 
+      padding: 12px 0 8px; 
+      opacity: 0;
+      transform: translateY(10px);
+      transition: var(--transition);
+    }
+    
+    .card:hover .actions {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    
+    .btn {
+      background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+      color: #fff;
+      border: none;
+      padding: 8px 12px;
+      border-radius: 8px;
+      font-weight: 600;
+      cursor: pointer;
+      font-size: 0.87rem;
+      transition: var(--transition);
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    
+    .btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(229,9,20,0.3);
+    }
+    
+    .btn-outline {
+      background: transparent;
+      border: 1px solid var(--primary);
+      color: var(--primary);
+    }
+    
+    .btn-outline:hover {
+      background: var(--primary);
+      color: white;
+    }
+
+    /* Form Elements */
+    input[type="text"], input[type="url"] {
+      background: var(--dark-elevated);
+      border: 1px solid rgba(255,255,255,0.06);
+      padding: 12px 16px;
+      border-radius: 10px;
+      color: var(--text-primary);
+      width: 100%;
+      outline: none;
+      font-size: 0.95rem;
+      transition: var(--transition);
+    }
+    
+    input[type="text"]:focus, input[type="url"]:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 2px rgba(229, 9, 20, 0.2);
+    }
+
+    /* Bottom Navigation */
+    nav.bottom-nav {
       position: fixed;
       bottom: 0;
       left: 0;
-      width: 100%;
-      background-color: #0D0D0D;
-      border-top: 1px solid #222;
+      right: 0;
+      height: 70px;
       display: flex;
       justify-content: space-around;
-      padding: 8px 0;
-      z-index: 1000;
+      align-items: center;
+      background: linear-gradient(180deg, rgba(13,13,13,0.95), rgba(13,13,13,0.98));
+      border-top: 1px solid rgba(255,255,255,0.05);
+      z-index: 1400;
+      backdrop-filter: blur(10px);
+      padding: 0 10px;
     }
-    nav button {
+    
+    .nav-btn {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      font-size: 12px;
+      color: var(--text-secondary);
+      opacity: 0.8;
+      border: none;
       background: none;
-      border: none;
-      color: white;
-      font-size: 0.8rem;
-      text-align: center;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-    }
-    .vip-section {
-      background-color: #E50914;
-      color: white;
-      padding: 10px;
-      text-align: center;
-      font-weight: bold;
-      box-shadow: 0 0 10px #E50914;
-      margin: 10px 0;
-      border-radius: 10px;
-    }
-    footer {
-      text-align: center;
-      padding: 20px;
-      font-size: 0.8rem;
-      color: #ccc;
-    }
-    .hidden { display: none; }
-    .age-gate-overlay {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background-color: rgba(0, 0, 0, 0.85);
-      color: white;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      z-index: 2000;
-      font-size: 1.2rem;
-      text-align: center;
-      padding: 20px;
-    }
-    .age-gate-buttons button {
-      background-color: #E50914;
-      border: none;
-      color: white;
-      padding: 10px 20px;
-      margin: 10px;
-      border-radius: 8px;
-      font-size: 1rem;
       cursor: pointer;
+      padding: 8px 12px;
+      border-radius: 12px;
+      transition: var(--transition);
     }
+    
+    .nav-btn:hover, .nav-btn.active {
+      opacity: 1;
+      color: var(--primary);
+      background: rgba(229, 9, 20, 0.1);
+    }
+    
+    .nav-btn i {
+      font-size: 18px;
+    }
+
+    /* Footer */
+    footer {
+      padding: 24px 20px;
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 0.86rem;
+      margin-top: 30px;
+      border-top: 1px solid rgba(255,255,255,0.04);
+    }
+    
+    footer a {
+      color: var(--text-secondary);
+      text-decoration: none;
+      margin: 0 10px;
+      transition: var(--transition);
+    }
+    
+    footer a:hover {
+      color: var(--primary);
+    }
+
+    /* Responsive Design */
     @media (min-width: 768px) {
       .carousel {
         display: grid;
-        grid-template-columns: repeat(2, 1fr);
-        gap: 15px;
+        grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+        gap: 20px;
       }
-      .card { min-width: auto; }
+      
+      .card { 
+        width: 100%; 
+        min-width: auto; 
+      }
+      
+      header { 
+        padding: 16px 28px; 
+      }
+      
+      .vip-banner { 
+        margin: 22px 28px; 
+      }
+      
+      main { 
+        padding: 16px 24px 40px; 
+      }
+      
+      .section-header {
+        margin-bottom: 20px;
+      }
+    }
+
+    @media (min-width: 1024px) {
+      .carousel {
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      }
+    }
+
+    /* Animation Keyframes */
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    
+    section {
+      animation: fadeIn 0.5s ease forwards;
+    }
+    
+    section:nth-child(1) { animation-delay: 0.1s; }
+    section:nth-child(2) { animation-delay: 0.2s; }
+    section:nth-child(3) { animation-delay: 0.3s; }
+    section:nth-child(4) { animation-delay: 0.4s; }
+    section:nth-child(5) { animation-delay: 0.5s; }
+    section:nth-child(6) { animation-delay: 0.6s; }
+    section:nth-child(7) { animation-delay: 0.7s; }
+    section:nth-child(8) { animation-delay: 0.8s; }
+
+    /* Loading Animation */
+    .loading {
+      display: inline-block;
+      width: 20px;
+      height: 20px;
+      border: 3px solid rgba(255,255,255,0.3);
+      border-radius: 50%;
+      border-top-color: var(--primary);
+      animation: spin 1s ease-in-out infinite;
+    }
+    
+    @keyframes spin {
+      to { transform: rotate(360deg); }
     }
   </style>
 </head>
 <body>
 
-<header>
-  <h1><img src="https://files.catbox.moe/0bg31o.jpg" alt="B">BeraStream</h1>
-  <div class="search"><input type="text" placeholder="Search..."></div>
-  <button class="vip-btn">VIP</button>
-</header>
+  <!-- Top bar -->
+  <header>
+    <div class="brand" title="BeraStream">
+      <img src="https://files.catbox.moe/0bg31o.jpg" alt="BeraStream logo" />
+      <div>BeraStream</div>
+    </div>
 
-<div class="vip-section">
-  Go Ad-Free + Unlock Exclusive Movies & Music <button class="btn">Upgrade</button>
-</div>
+    <div class="search-wrap">
+      <input id="global-search" type="text" placeholder="Search (YouTube / Spotify / Movies) — try 'afrobeats' or paste a link..." />
+      <div class="search-icon"><i class="fas fa-search"></i></div>
+    </div>
 
-<section id="movies">
-  <h2>Movies</h2>
-  <div class="carousel" id="movies-list"></div>
-</section>
+    <button class="vip-btn" id="vip-cta">
+      <i class="fas fa-crown"></i> VIP
+    </button>
+  </header>
 
-<section id="music">
-  <h2>Music</h2>
-  <div class="carousel" id="music-list"></div>
-</section>
-
-<section id="youtube">
-  <h2>YouTube</h2>
-  <div class="carousel" id="youtube-list"></div>
-</section>
-
-<section id="tiktok">
-  <h2>TikTok</h2>
-  <input type="text" id="tiktok-url" placeholder="Paste TikTok link..." style="width:100%;padding:8px;border-radius:8px;">
-  <button class="btn" onclick="downloadTikTok()">Download</button>
-  <div class="carousel" id="tiktok-list"></div>
-</section>
-
-<section id="ai-chat">
-  <h2>AI Chat</h2>
-  <input type="text" id="ai-input" placeholder="Ask me anything..." style="width:100%;padding:8px;border-radius:8px;">
-  <div id="ai-response" style="margin-top:10px;"></div>
-</section>
-
-<section id="ai-vision">
-  <h2>AI Vision</h2>
-  <input type="text" id="vision-url" placeholder="Image URL..." style="width:100%;padding:8px;border-radius:8px;">
-  <input type="text" id="vision-prompt" placeholder="Describe what you want..." style="width:100%;padding:8px;border-radius:8px;margin-top:5px;">
-  <button class="btn" onclick="runVision()">Analyze</button>
-  <div id="vision-response" style="margin-top:10px;"></div>
-</section>
-
-<section id="ai-image">
-  <h2>AI Image Generator</h2>
-  <input type="text" id="image-prompt" placeholder="Enter prompt..." style="width:100%;padding:8px;border-radius:8px;">
-  <button class="btn" onclick="generateImage()">Generate</button>
-  <div class="carousel" id="image-results"></div>
-</section>
-
-<section id="adult" class="hidden">
-  <h2>Adult 18+</h2>
-  <input type="text" id="adult-query" placeholder="Search..." style="width:100%;padding:8px;border-radius:8px;">
-  <button class="btn" onclick="searchAdult()">Search</button>
-  <div class="carousel" id="adult-list"></div>
-</section>
-
-<footer>
-  About | Contact | Privacy | © 2025 BeraStream.<br>
-  Developed by Bruce Bera | +254743982206
-</footer>
-
-<nav>
-  <button>🏠<span>Home</span></button>
-  <button>🔍<span>Search</span></button>
-  <button>🎵<span>Music</span></button>
-  <button>🎬<span>Shorts</span></button>
-  <button>👤<span>Profile</span></button>
-  <button>🤖<span>AI</span></button>
-</nav>
-
-<!-- Age-Gate Popup -->
-<div id="age-gate" class="age-gate-overlay">
-  <div>Please confirm you're 18 years or older to access adult content:</div>
-  <div class="age-gate-buttons">
-    <button onclick="confirmAge()">I am 18+</button>
-    <button onclick="denyAge()">I am under 18</button>
+  <!-- VIP banner -->
+  <div class="vip-banner" role="region" aria-label="VIP upsell">
+    <div class="cta">Go Ad-Free + Unlock Exclusive Movies & Music</div>
+    <div>
+      <button class="btn" onclick="startUpgrade()">
+        <i class="fas fa-rocket"></i> Upgrade Now
+      </button>
+    </div>
   </div>
-</div>
 
-<script>
-  function confirmAge() {
-    document.getElementById('age-gate').classList.add('hidden');
-    document.getElementById('adult').classList.remove('hidden');
-  }
-  function denyAge() {
-    document.getElementById('age-gate').innerHTML = '<div>Sorry, you cannot access this content.</div>';
-  }
+  <main>
 
-  async function fetchMovies() {
-    const res = await fetch('/api/movies/search?q=black panther');
-    const data = await res.json();
-    const list = document.getElementById('movies-list');
-    data.results?.forEach(movie => {
-      const card = document.createElement('div');
-      card.className = 'card';
-      card.innerHTML = `<img src="${movie.image}" alt="${movie.title}">
-        <p>${movie.title} (${movie.year})</p>
-        <button class="btn">Play</button>`;
-      list.appendChild(card);
-    });
-  }
+    <!-- Movies -->
+    <section id="movies">
+      <div class="section-header">
+        <h2><i class="fas fa-film"></i> Movies</h2>
+        <a href="#" class="view-all">View All <i class="fas fa-chevron-right"></i></a>
+      </div>
+      <div class="carousel" id="movies-list" aria-live="polite"></div>
+    </section>
 
-  async function fetchMusic() {
-    const res = await fetch('/api/spotify/search?q=burna boy');
-    const data = await res.json();
-    const list = document.getElementById('music-list');
-    data.results?.forEach(track => {
-      const card = document.createElement('div');
-      card.className = 'card';
-      card.innerHTML = `<img src="${track.image}" alt="${track.title}">
-        <p>${track.title}</p>
-        <button class="btn">Play</button>`;
-      list.appendChild(card);
-    });
-  }
+    <!-- Music -->
+    <section id="music">
+      <div class="section-header">
+        <h2><i class="fas fa-music"></i> Music</h2>
+        <a href="#" class="view-all">View All <i class="fas fa-chevron-right"></i></a>
+      </div>
+      <div class="carousel" id="music-list" aria-live="polite"></div>
+    </section>
 
-  async function fetchYouTube() {
-    const res = await fetch('/api/youtube/search?q=african music');
-    const data = await res.json();
-    const list = document.getElementById('youtube-list');
-    data.results?.forEach(video => {
-      const card = document.createElement('div');
-      card.className = 'card';
-      card.innerHTML = `<img src="${video.thumbnail}" alt="${video.title}">
-        <p>${video.title}</p>
-        <button class="btn">Play</button>`;
-      list.appendChild(card);
-    });
-  }
+    <!-- YouTube -->
+    <section id="youtube">
+      <div class="section-header">
+        <h2><i class="fab fa-youtube"></i> YouTube</h2>
+        <a href="#" class="view-all">View All <i class="fas fa-chevron-right"></i></a>
+      </div>
+      <div class="carousel" id="youtube-list" aria-live="polite"></div>
+    </section>
 
-  async function downloadTikTok() {
-    const url = document.getElementById('tiktok-url').value;
-    if (!url) return alert('Paste TikTok link first!');
-    const res = await fetch('/api/tiktok/download?url=' + encodeURIComponent(url));
-    const data = await res.json();
-    const list = document.getElementById('tiktok-list');
-    const card = document.createElement('div');
-    card.className = 'card';
-    card.innerHTML = `<video src="${data.video}" controls></video>`;
-    list.appendChild(card);
-  }
+    <!-- TikTok -->
+    <section id="tiktok">
+      <div class="section-header">
+        <h2><i class="fab fa-tiktok"></i> TikTok</h2>
+      </div>
+      <div style="display:flex;gap:10px;margin-bottom:16px;">
+        <input id="tiktok-url" type="url" placeholder="Paste TikTok link..." />
+        <button class="btn" onclick="downloadTikTok()">
+          <i class="fas fa-download"></i> Download
+        </button>
+      </div>
+      <div class="carousel" id="tiktok-list" aria-live="polite"></div>
+    </section>
 
-  document.getElementById('ai-input').addEventListener('keypress', async (e) => {
-    if (e.key === 'Enter') {
-      const text = e.target.value;
-      const res = await fetch('/api/ai/chat?text=' + encodeURIComponent(text));
-      const data = await res.json();
-      document.getElementById('ai-response').innerText = data.result || 'No response';
+    <!-- AI Chat -->
+    <section id="ai-chat">
+      <h2><i class="fas fa-robot"></i> AI Chat</h2>
+      <div style="display:flex;gap:10px;align-items:center;margin-top:12px;">
+        <input id="ai-input" type="text" placeholder="Ask me anything... (press Enter)" />
+        <button class="btn" onclick="sendAiMessage()">
+          <i class="fas fa-paper-plane"></i>
+        </button>
+      </div>
+      <div id="ai-response" style="margin-top:16px;padding:12px;background:var(--dark-elevated);border-radius:var(--border-radius);min-height:60px;" class="muted"></div>
+    </section>
+
+    <!-- AI Vision -->
+    <section id="ai-vision">
+      <h2><i class="fas fa-eye"></i> AI Vision</h2>
+      <div style="display:flex;flex-direction:column;gap:10px;margin-top:12px;">
+        <input id="vision-url" type="url" placeholder="Image URL..." />
+        <input id="vision-prompt" type="text" placeholder="Optional prompt to guide analysis..." />
+        <div style="display:flex;gap:10px;">
+          <button class="btn" onclick="runVision()">
+            <i class="fas fa-search"></i> Analyze
+          </button>
+        </div>
+      </div>
+      <div id="vision-response" style="margin-top:16px;padding:12px;background:var(--dark-elevated);border-radius:var(--border-radius);min-height:60px;" class="muted"></div>
+    </section>
+
+    <!-- AI Image Generator -->
+    <section id="ai-image">
+      <h2><i class="fas fa-paint-brush"></i> AI Image Generator</h2>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:12px;">
+        <input id="image-prompt" type="text" placeholder="Enter prompt to generate an image..." style="flex:1;min-width:220px;" />
+        <button class="btn" onclick="generateImage()">
+          <i class="fas fa-magic"></i> Generate
+        </button>
+      </div>
+      <div class="carousel" id="image-results" style="margin-top:16px;" aria-live="polite"></div>
+    </section>
+
+    <!-- Adult (18+) -->
+    <section id="adult">
+      <h2><i class="fas fa-exclamation-triangle"></i> Adult (18+) — Explicit content. Use responsibly.</h2>
+      <div style="display:flex;gap:10px;margin-bottom:16px;margin-top:12px;">
+        <input id="adult-query" type="text" placeholder="Search adult content..." />
+        <button class="btn" onclick="searchAdult()">
+          <i class="fas fa-search"></i> Search
+        </button>
+      </div>
+      <div class="carousel" id="adult-list" aria-live="polite"></div>
+    </section>
+
+    <footer>
+      <div style="margin-bottom:12px;">
+        <a href="#">About</a> | <a href="#">Contact</a> | <a href="#">Privacy</a> | <a href="#">Terms</a>
+      </div>
+      <div>© 2025 BeraStream. Developed by Bruce Bera | +254743982206</div>
+    </footer>
+  </main>
+
+  <!-- Bottom nav -->
+  <nav class="bottom-nav" role="navigation" aria-label="Primary">
+    <button class="nav-btn active" onclick="scrollToTop()">
+      <i class="fas fa-home"></i>
+      <div>Home</div>
+    </button>
+    <button class="nav-btn" onclick="focusSearch()">
+      <i class="fas fa-search"></i>
+      <div>Search</div>
+    </button>
+    <button class="nav-btn" onclick="scrollToSection('music')">
+      <i class="fas fa-music"></i>
+      <div>Music</div>
+    </button>
+    <button class="nav-btn" onclick="scrollToSection('tiktok')">
+      <i class="fas fa-video"></i>
+      <div>Shorts</div>
+    </button>
+    <button class="nav-btn" onclick="scrollToSection('adult')">
+      <i class="fas fa-user"></i>
+      <div>Profile</div>
+    </button>
+    <button class="nav-btn" onclick="scrollToSection('ai-chat')">
+      <i class="fas fa-robot"></i>
+      <div>AI</div>
+    </button>
+  </nav>
+
+  <script>
+    /* Small UI helpers */
+    const byId = id => document.getElementById(id);
+
+    function startUpgrade() {
+      alert('Upgrade flow placeholder — integrate your payment / subscription logic here.');
     }
-  });
+    
+    function scrollToSection(id) {
+      const el = byId(id);
+      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      
+      // Update active nav button
+      document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
+      event.currentTarget.classList.add('active');
+    }
+    
+    function scrollToTop() { 
+      window.scrollTo({ top: 0, behavior: 'smooth' }); 
+      document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
+      document.querySelector('.nav-btn:nth-child(1)').classList.add('active');
+    }
+    
+    function focusSearch() { 
+      byId('global-search').focus(); 
+    }
+    
+    function sendAiMessage() {
+      const input = byId('ai-input');
+      const event = new KeyboardEvent('keypress', { key: 'Enter' });
+      input.dispatchEvent(event);
+    }
 
-  async function runVision() {
-    const url = document.getElementById('vision-url').value;
-    const prompt = document.getElementById('vision-prompt').value;
-    const res = await fetch(`/api/ai/vision?url=${encodeURIComponent(url)}&prompt=${encodeURIComponent(prompt)}`);
-    const data = await res.json();
-    document.getElementById('vision-response').innerText = data.result || 'No description';
-  }
+    /* Fetch helpers (simple proxy use) */
+    async function safeJson(res) {
+      try { return await res.json(); } catch (e) { return {}; }
+    }
 
-  async function generateImage() {
-    const prompt = document.getElementById('image-prompt').value;
-    const res = await fetch('/api/ai/image?prompt=' + encodeURIComponent(prompt));
-    const data = await res.json();
-    const list = document.getElementById('image-results');
-    list.innerHTML = '';
-    data.results?.forEach(img => {
+    /* --- Movies --- */
+    async function fetchMovies(q = 'black panther') {
+      try {
+        byId('movies-list').innerHTML = '<div style="padding:20px;text-align:center;width:100%"><span class="loading"></span> Loading movies...</div>';
+        const res = await fetch('/api/movies/search?q=' + encodeURIComponent(q));
+        const data = await safeJson(res);
+        const list = byId('movies-list');
+        list.innerHTML = '';
+        const items = data.results || data.items || [];
+        if (!items.length) {
+          // fallback sample card
+          list.appendChild(sampleCard('No results', 'No results found', 'https://files.catbox.moe/0bg31o.jpg'));
+          return;
+        }
+        items.forEach(m => {
+          const img = m.image || m.poster || m.thumbnail || '';
+          const title = m.title || m.name || 'Untitled';
+          const year = m.year || m.release || '';
+          const card = document.createElement('div');
+          card.className = 'card';
+          card.innerHTML = `
+            <img src="${img}" alt="${title}" onerror="this.src='https://files.catbox.moe/0bg31o.jpg'">
+            <div class="card-body">
+              <div class="card-title">${title}</div>
+              <div class="meta">${year}</div>
+              <div class="actions">
+                <button class="btn" onclick="playMovie('${encodeURIComponent(m.url || m.link || '')}')"><i class="fas fa-play"></i> Play</button>
+                <button class="btn btn-outline" onclick="downloadMovie('${encodeURIComponent(m.url || m.link || '')}')"><i class="fas fa-download"></i></button>
+              </div>
+            </div>
+          `;
+          list.appendChild(card);
+        });
+      } catch (err) {
+        console.error('fetchMovies error', err);
+        byId('movies-list').innerHTML = '<div style="padding:20px;text-align:center;width:100%">Error loading movies</div>';
+      }
+    }
+
+    function sampleCard(title, meta, img) {
       const card = document.createElement('div');
       card.className = 'card';
-      card.innerHTML = `<img src="${img.url}" alt="AI Image">`;
-      list.appendChild(card);
+      card.innerHTML = `
+        <img src="${img}" onerror="this.src='https://files.catbox.moe/0bg31o.jpg'">
+        <div class="card-body">
+          <div class="card-title">${title}</div>
+          <div class="meta">${meta}</div>
+        </div>
+      `;
+      return card;
+    }
+
+    function playMovie(urlEncoded) {
+      const url = decodeURIComponent(urlEncoded);
+      if (!url) return alert('No stream URL available');
+      // open zoom stream proxy
+      const streamUrl = '/api/movies/zoom?url=' + encodeURIComponent(url);
+      window.open(streamUrl, '_blank');
+    }
+    
+    function downloadMovie(urlEncoded) {
+      const url = decodeURIComponent(urlEncoded);
+      if (!url) return alert('No download URL available');
+      const dl = '/api/movies/zoom?url=' + encodeURIComponent(url);
+      window.open(dl, '_blank');
+    }
+
+    /* --- Music (Spotify / YouTube mp3) --- */
+    async function fetchMusic(q = 'burna boy') {
+      try {
+        byId('music-list').innerHTML = '<div style="padding:20px;text-align:center;width:100%"><span class="loading"></span> Loading music...</div>';
+        const res = await fetch('/api/spotify/search?q=' + encodeURIComponent(q));
+        const data = await safeJson(res);
+        const list = byId('music-list');
+        list.innerHTML = '';
+        const items = data.results || data.tracks || data.items || [];
+        if (!items.length) {
+          list.appendChild(sampleCard('No tracks', 'No results', 'https://files.catbox.moe/0bg31o.jpg'));
+          return;
+        }
+        items.forEach(t => {
+          const img = t.image || t.album?.image || t.thumbnail || '';
+          const title = t.title || t.name || (t.trackName) || 'Unknown';
+          const artist = (t.artist || t.artists?.join?.(', ') || t.author || '');
+          const url = t.url || t.link || t.preview || '';
+          const card = document.createElement('div');
+          card.className = 'card';
+          card.innerHTML = `
+            <img src="${img}" alt="${title}" onerror="this.src='https://files.catbox.moe/0bg31o.jpg'">
+            <div class="card-body">
+              <div class="card-title">${title}</div>
+              <div class="meta">${artist}</div>
+              <div class="actions">
+                <button class="btn" onclick="playTrack('${encodeURIComponent(url)}')"><i class="fas fa-play"></i> Play</button>
+                <button class="btn btn-outline" onclick="downloadTrack('${encodeURIComponent(url)}')"><i class="fas fa-download"></i></button>
+              </div>
+            </div>
+          `;
+          list.appendChild(card);
+        });
+      } catch (err) { 
+        console.error('fetchMusic error', err);
+        byId('music-list').innerHTML = '<div style="padding:20px;text-align:center;width:100%">Error loading music</div>';
+      }
+    }
+
+    function playTrack(urlEnc) {
+      const url = decodeURIComponent(urlEnc);
+      if (!url) return alert('No track URL available');
+      // open Youtube mp3 proxy if needed
+      const endpoint = '/api/youtube/mp3?url=' + encodeURIComponent(url);
+      window.open(endpoint, '_blank');
+    }
+    
+    function downloadTrack(urlEnc) {
+      const url = decodeURIComponent(urlEnc);
+      if (!url) return alert('No track URL available');
+      const endpoint = '/api/youtube/mp3?url=' + encodeURIComponent(url);
+      window.open(endpoint, '_blank');
+    }
+
+    /* --- YouTube --- */
+    async function fetchYouTube(q = 'african music') {
+      try {
+        byId('youtube-list').innerHTML = '<div style="padding:20px;text-align:center;width:100%"><span class="loading"></span> Loading videos...</div>';
+        const res = await fetch('/api/youtube/search?q=' + encodeURIComponent(q));
+        const data = await safeJson(res);
+        const list = byId('youtube-list');
+        list.innerHTML = '';
+        const items = data.results || data.videos || data.items || [];
+        if (!items.length) {
+          list.appendChild(sampleCard('No videos', 'No results', 'https://files.catbox.moe/0bg31o.jpg'));
+          return;
+        }
+        items.forEach(v => {
+          const thumb = v.thumbnail || v.thumbnails?.[0] || v.thumb || '';
+          const title = v.title || v.name || 'Untitled';
+          const videoUrl = v.url || v.link || v.watch || '';
+          const card = document.createElement('div');
+          card.className = 'card';
+          card.innerHTML = `
+            <img src="${thumb}" alt="${title}" onerror="this.src='https://files.catbox.moe/0bg31o.jpg'">
+            <div class="card-body">
+              <div class="card-title">${title}</div>
+              <div class="meta">${v.duration || ''}</div>
+              <div class="actions">
+                <button class="btn" onclick="openVideo('${encodeURIComponent(videoUrl)}')"><i class="fas fa-play"></i> Play</button>
+              </div>
+            </div>
+          `;
+          list.appendChild(card);
+        });
+      } catch (err) { 
+        console.error('fetchYouTube error', err);
+        byId('youtube-list').innerHTML = '<div style="padding:20px;text-align:center;width:100%">Error loading videos</div>';
+      }
+    }
+
+    function openVideo(urlEnc) {
+      const url = decodeURIComponent(urlEnc);
+      if (!url) return alert('No video URL available');
+      const endpoint = '/api/youtube/mp4?url=' + encodeURIComponent(url);
+      window.open(endpoint, '_blank');
+    }
+
+    /* --- TikTok --- */
+    async function downloadTikTok() {
+      const url = byId('tiktok-url').value.trim();
+      if (!url) return alert('Paste TikTok link first!');
+      try {
+        byId('tiktok-list').innerHTML = '<div style="padding:20px;text-align:center;width:100%"><span class="loading"></span> Downloading...</div>';
+        const res = await fetch('/api/tiktok/download?url=' + encodeURIComponent(url));
+        const data = await safeJson(res);
+        const videoSrc = data.video || data.url || data.result?.video || '';
+        if (!videoSrc) return alert('Could not fetch video from API');
+        const list = byId('tiktok-list');
+        const card = document.createElement('div');
+        card.className = 'card';
+        card.innerHTML = `<video src="${videoSrc}" controls muted playsinline></video>
+          <div class="card-body"><div class="card-title">TikTok Video</div></div>`;
+        list.innerHTML = '';
+        list.appendChild(card);
+      } catch (err) { 
+        console.error('downloadTikTok error', err); 
+        alert('Error downloading TikTok');
+        byId('tiktok-list').innerHTML = '<div style="padding:20px;text-align:center;width:100%">Download failed</div>';
+      }
+    }
+
+    /* --- AI Chat --- */
+    document.getElementById('ai-input').addEventListener('keypress', async (e) => {
+      if (e.key !== 'Enter') return;
+      const text = e.target.value.trim();
+      if (!text) return;
+      try {
+        byId('ai-response').innerHTML = '<span class="loading"></span> Thinking...';
+        const res = await fetch('/api/ai/chat?text=' + encodeURIComponent(text));
+        const data = await safeJson(res);
+        const out = data.result || data.answer || data.response || JSON.stringify(data).slice(0, 400);
+        byId('ai-response').textContent = out;
+      } catch (err) {
+        console.error('AI chat error', err);
+        byId('ai-response').textContent = 'Error getting response';
+      }
+      e.target.value = '';
     });
-  }
 
-  async function searchAdult() {
-    const query = document.getElementById('adult-query').value;
-    const res = await fetch('/api/adult/search?q=' + encodeURIComponent(query));
-    const data = await res.json();
-    const list = document.getElementById('adult-list');
-    list.innerHTML = '';
-    data.results?.forEach(v => {
-      const card = document.createElement('div');
-      card.className = 'card';
-      card.innerHTML = `<img src="${v.thumbnail}" alt="${v.title}">
-        <p>${v.title}</p>
-        <button class="btn">Watch</button>`;
-      list.appendChild(card);
-    });
-  }
+    /* --- AI Vision --- */
+    async function runVision() {
+      const url = byId('vision-url').value.trim();
+      const prompt = byId('vision-prompt').value.trim();
+      if (!url) return alert('Enter image URL for analysis');
+      try {
+        byId('vision-response').innerHTML = '<span class="loading"></span> Analyzing...';
+        const res = await fetch('/api/ai/vision?url=' + encodeURIComponent(url) + '&prompt=' + encodeURIComponent(prompt));
+        const data = await safeJson(res);
+        const out = data.result || data.description || JSON.stringify(data).slice(0, 500);
+        byId('vision-response').textContent = out;
+      } catch (err) {
+        console.error('runVision error', err);
+        byId('vision-response').textContent = 'Error analyzing image';
+      }
+    }
 
-  fetchMovies();
-  fetchMusic();
-  fetchYouTube();
-</script>
+    /* --- AI Image Generator --- */
+    async function generateImage() {
+      const prompt = byId('image-prompt').value.trim();
+      if (!prompt) return alert('Enter a prompt to generate');
+      try {
+        byId('image-results').innerHTML = '<div style="padding:20px;text-align:center;width:100%"><span class="loading"></span> Generating...</div>';
+        const res = await fetch('/api/ai/image?prompt=' + encodeURIComponent(prompt));
+        const data = await safeJson(res);
+        const list = byId('image-results');
+        list.innerHTML = '';
+        const images = data.results || data.images || data.output || [];
+        if (!images.length) {
+          list.appendChild(sampleCard('No images', 'No results', 'https://files.catbox.moe/0bg31o.jpg'));
+          return;
+        }
+        images.forEach(im => {
+          const url = im.url || im.image || im.src || im;
+          const card = document.createElement('div');
+          card.className = 'card';
+          card.innerHTML = `
+            <img src="${url}" onerror="this.src='https://files.catbox.moe/0bg31o.jpg'">
+            <div class="card-body">
+              <div class="card-title">AI Image</div>
+              <div class="actions"><button class="btn" onclick="useAsCover('${encodeURIComponent(url)}')"><i class="fas fa-image"></i> Use as banner</button></div>
+            </div>
+          `;
+          list.appendChild(card);
+        });
+      } catch (err) { 
+        console.error('generateImage error', err);
+        byId('image-results').innerHTML = '<div style="padding:20px;text-align:center;width:100%">Generation failed</div>';
+      }
+    }
 
+    function useAsCover(urlEnc) {
+      const url = decodeURIComponent(urlEnc);
+      document.querySelector('.brand img').src = url;
+      alert('Used generated image as brand/banner (temporary). Save permanently via your backend.');
+    }
+
+    /* --- Adult search --- */
+    async function searchAdult() {
+      const q = byId('adult-query').value.trim();
+      if (!q) return alert('Enter a search term');
+      try {
+        byId('adult-list').innerHTML = '<div style="padding:20px;text-align:center;width:100%"><span class="loading"></span> Searching...</div>';
+        const res = await fetch('/api/adult/search?q=' + encodeURIComponent(q));
+        const data = await safeJson(res);
+        const list = byId('adult-list');
+        list.innerHTML = '';
+        const items = data.results || data.items || [];
+        if (!items.length) {
+          list.appendChild(sampleCard('No results', 'No content found', 'https://files.catbox.moe/0bg31o.jpg'));
+          return;
+        }
+        items.forEach(v => {
+          const thumb = v.thumbnail || v.thumb || v.image || '';
+          const title = v.title || v.name || 'Adult';
+          const card = document.createElement('div');
+          card.className = 'card';
+          card.innerHTML = `
+            <img src="${thumb}" onerror="this.src='https://files.catbox.moe/0bg31o.jpg'">
+            <div class="card-body">
+              <div class="card-title">${title}</div>
+              <div class="actions">
+                <button class="btn" onclick="openAdult('${encodeURIComponent(v.url || v.link || v.watch || '')}')"><i class="fas fa-play"></i> Watch</button>
+                <button class="btn btn-outline" onclick="downloadAdult('${encodeURIComponent(v.url || v.link || v.watch || '')}')"><i class="fas fa-download"></i></button>
+              </div>
+            </div>
+          `;
+          list.appendChild(card);
+        });
+      } catch (err) { 
+        console.error('searchAdult error', err); 
+        alert('Error searching adult content');
+        byId('adult-list').innerHTML = '<div style="padding:20px;text-align:center;width:100%">Search failed</div>';
+      }
+    }
+
+    function openAdult(urlEnc) {
+      const url = decodeURIComponent(urlEnc);
+      if (!url) return alert('No url');
+      const endpoint = '/api/adult/download?url=' + encodeURIComponent(url);
+      window.open(endpoint, '_blank');
+    }
+    
+    function downloadAdult(urlEnc) {
+      openAdult(urlEnc);
+    }
+
+    /* --- Global search handler --- */
+    (function setupGlobalSearch(){
+      const el = byId('global-search');
+      el.addEventListener('keypress', function(e){
+        if (e.key !== 'Enter') return;
+        const q = e.target.value.trim();
+        if (!q) return;
+        // simple routing: detect youtube link / spotify / tiktok / otherwise
+        if (/youtube\.com|youtu\.be/.test(q)) {
+          // open youtube mp4/mp3 options - use youtube search endpoint with query param
+          fetch('/api/youtube/search?q=' + encodeURIComponent(q)).then(r=>r.json()).then(d=>{ alert('Search completed — see console for data'); console.log(d); });
+        } else if (/tiktok\.com/.test(q)) {
+          byId('tiktok-url').value = q;
+          downloadTikTok();
+        } else if (/spotify/.test(q) || q.length < 60 && /\s/.test(q)) {
+          fetchMusic(q);
+        } else {
+          // treat as movie/music search
+          fetchYouTube(q);
+          fetchMusic(q);
+          fetchMovies(q);
+        }
+        e.target.blur();
+      });
+    })();
+
+    /* initial loads */
+    fetchMovies();
+    fetchMusic();
+    fetchYouTube();
+  </script>
 </body>
 </html>
