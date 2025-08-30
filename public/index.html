@@ -3,2131 +3,883 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gram_X - Secure Messaging</title>
+    <title>BeraStream - Your Home of Movies, Music & Vibes</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800&display=swap" rel="stylesheet">
     <style>
         :root {
-            /* Default theme (Neutral/Dark Modern) */
-            --bg-color: #1e1e2f;
-            --sidebar-bg: #2b2d42;
-            --chat-bg: #1a1c2d;
-            --sent-bubble: #2b2d42;
-            --received-bubble: #3a3d5c;
-            --primary-accent: #6c63ff;
-            --secondary-accent: #00adb5;
-            --text-color: #e0e0e0;
-            --sent-text: #e0e0e0;
-            --received-text: #e0e0e0;
-            --input-bg: #2b2d42;
-            --shadow-color: rgba(0, 0, 0, 0.2);
-            --online-status: #4CAF50;
-            --offline-status: #888;
-            --group-chat-bubble: #5d3a9b;
+            --black: #0D0D0D;
+            --red: #E50914;
+            --white: #FFFFFF;
+            --dark-gray: #1A1A1A;
+            --medium-gray: #333333;
+            --light-gray: #808080;
         }
-
-        /* WhatsApp theme */
-        [data-theme="whatsapp"] {
-            --bg-color: #e6ddd4;
-            --sidebar-bg: #f0f0f0;
-            --chat-bg: #e6ddd4;
-            --sent-bubble: #d9fdd3;
-            --received-bubble: #ffffff;
-            --primary-accept: #25d366;
-            --secondary-accent: #128c7e;
-            --text-color: #333333;
-            --sent-text: #333333;
-            --received-text: #333333;
-            --input-bg: #ffffff;
-            --shadow-color: rgba(0, 0, 0, 0.1);
-            --online-status: #25d366;
-            --offline-status: #888;
-            --group-chat-bubble: #bbddfb;
-        }
-
-        /* Neon/Cyberpunk theme */
-        [data-theme="neon"] {
-            --bg-color: #0a0a12;
-            --sidebar-bg: #15152a;
-            --chat-bg: #0a0a12;
-            --sent-bubble: #6c63ff;
-            --received-bubble: #ff2a6d;
-            --primary-accent: #00fffc;
-            --secondary-accent: #ff2a6d;
-            --text-color: #ffffff;
-            --sent-text: #ffffff;
-            --received-text: #ffffff;
-            --input-bg: #15152a;
-            --shadow-color: rgba(0, 255, 252, 0.2);
-            --online-status: #00fffc;
-            --offline-status: #ff2a6d;
-            --group-chat-bubble: #ff00aa;
-        }
-
+        
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: 'Montserrat', sans-serif;
         }
-
+        
         body {
-            background-color: var(--bg-color);
-            color: var(--text-color);
-            height: 100vh;
-            display: flex;
-            flex-direction: column;
-            transition: all 0.3s ease;
+            background-color: var(--black);
+            color: var(--white);
+            overflow-x: hidden;
         }
-
-        .header {
-            background-color: var(--sidebar-bg);
-            padding: 15px 20px;
+        
+        /* Header & Navigation */
+        header {
+            background: linear-gradient(to bottom, rgba(0,0,0,0.9) 0%, transparent 100%);
+            padding: 20px 5%;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            box-shadow: 0 2px 10px var(--shadow-color);
-            z-index: 10;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+            transition: background-color 0.3s;
         }
-
-        .header h1 {
-            font-size: 1.5rem;
-            color: var(--primary-accent);
+        
+        header.scrolled {
+            background-color: var(--black);
         }
-
-        .theme-selector {
-            background-color: var(--input-bg);
-            color: var(--text-color);
-            border: 1px solid var(--primary-accent);
-            padding: 8px 12px;
-            border-radius: 20px;
-            cursor: pointer;
-            outline: none;
-        }
-
-        .container {
-            display: flex;
-            flex: 1;
-            overflow: hidden;
-        }
-
-        .sidebar {
-            width: 350px;
-            background-color: var(--sidebar-bg);
-            display: flex;
-            flex-direction: column;
-            border-right: 1px solid rgba(255, 255, 255, 0.1);
-            transition: all 0.3s ease;
-        }
-
-        .user-panel {
-            padding: 15px;
+        
+        .logo {
             display: flex;
             align-items: center;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            gap: 10px;
         }
-
-        .user-avatar {
+        
+        .logo-icon {
+            background-color: var(--red);
+            color: var(--white);
             width: 40px;
             height: 40px;
-            border-radius: 50%;
-            background-color: var(--primary-accent);
+            border-radius: 8px;
             display: flex;
-            align-items: center;
             justify-content: center;
-            font-weight: bold;
-            margin-right: 10px;
-            overflow: hidden;
-            cursor: pointer;
-        }
-
-        .user-avatar img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-
-        .user-info {
-            flex: 1;
-        }
-
-        .user-name {
-            font-weight: bold;
-        }
-
-        .user-status {
-            font-size: 0.8rem;
-            color: var(--online-status);
-        }
-
-        .search-box {
-            padding: 15px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-        }
-
-        .search-input {
-            width: 100%;
-            padding: 10px 15px;
-            border-radius: 20px;
-            border: none;
-            background-color: var(--input-bg);
-            color: var(--text-color);
-            outline: none;
-        }
-
-        .sidebar-tabs {
-            display: flex;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-        }
-
-        .sidebar-tab {
-            flex: 1;
-            text-align: center;
-            padding: 12px;
-            cursor: pointer;
-            transition: background-color 0.2s;
-        }
-
-        .sidebar-tab.active {
-            border-bottom: 2px solid var(--primary-accent);
-        }
-
-        .contacts-list {
-            flex: 1;
-            overflow-y: auto;
-        }
-
-        .contact {
-            padding: 15px;
-            display: flex;
             align-items: center;
-            cursor: pointer;
-            transition: background-color 0.2s;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            font-weight: 800;
+            font-size: 24px;
         }
-
-        .contact:hover {
-            background-color: rgba(255, 255, 255, 0.05);
+        
+        .logo-text {
+            font-weight: 700;
+            font-size: 24px;
+            background: linear-gradient(to right, var(--white) 60%, var(--red) 40%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
         }
-
-        .contact.active {
-            background-color: rgba(255, 255, 255, 0.1);
-        }
-
-        .contact-avatar {
-            width: 45px;
-            height: 45px;
-            border-radius: 50%;
-            background-color: var(--secondary-accent);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: bold;
-            margin-right: 15px;
+        
+        .search-bar {
+            flex: 1;
+            max-width: 500px;
+            margin: 0 20px;
             position: relative;
-            overflow: hidden;
         }
-
-        .contact-avatar img {
+        
+        .search-bar input {
             width: 100%;
-            height: 100%;
+            padding: 12px 20px;
+            border-radius: 25px;
+            border: none;
+            background-color: rgba(255, 255, 255, 0.1);
+            color: var(--white);
+            font-size: 16px;
+            backdrop-filter: blur(10px);
+        }
+        
+        .search-bar i {
+            position: absolute;
+            right: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--light-gray);
+        }
+        
+        .vip-button {
+            background-color: var(--red);
+            color: var(--white);
+            border: none;
+            padding: 10px 20px;
+            border-radius: 25px;
+            font-weight: 700;
+            cursor: pointer;
+            box-shadow: 0 0 15px rgba(229, 9, 20, 0.5);
+            transition: all 0.3s;
+        }
+        
+        .vip-button:hover {
+            box-shadow: 0 0 20px rgba(229, 9, 20, 0.8);
+            transform: scale(1.05);
+        }
+        
+        /* Hero Section */
+        .hero {
+            height: 80vh;
+            background: linear-gradient(rgba(0,0,0,0.4), rgba(0,0,0,0.7)), url('https://images.unsplash.com/photo-1536240478700-b869070f9279?ixlib=rb-4.0.3&auto=format&fit=crop&w=1600&q=80');
+            background-size: cover;
+            background-position: center;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            padding: 0 5%;
+            position: relative;
+            margin-top: 80px;
+        }
+        
+        .hero-content {
+            max-width: 600px;
+        }
+        
+        .hero h1 {
+            font-size: 3.5rem;
+            font-weight: 800;
+            margin-bottom: 20px;
+            text-shadow: 2px 2px 10px rgba(0,0,0,0.5);
+        }
+        
+        .hero p {
+            font-size: 1.2rem;
+            margin-bottom: 30px;
+            max-width: 500px;
+        }
+        
+        .watch-now {
+            background-color: var(--red);
+            color: var(--white);
+            border: none;
+            padding: 15px 30px;
+            border-radius: 30px;
+            font-weight: 700;
+            font-size: 1.2rem;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .watch-now:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 20px rgba(229, 9, 20, 0.7);
+        }
+        
+        /* Content Sections */
+        .section {
+            padding: 40px 5%;
+        }
+        
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .section-title {
+            font-size: 1.8rem;
+            font-weight: 700;
+        }
+        
+        .see-all {
+            color: var(--red);
+            text-decoration: none;
+            font-weight: 600;
+        }
+        
+        .content-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: 20px;
+        }
+        
+        .content-card {
+            background-color: var(--dark-gray);
+            border-radius: 10px;
+            overflow: hidden;
+            transition: transform 0.3s;
+            position: relative;
+        }
+        
+        .content-card:hover {
+            transform: scale(1.05);
+            z-index: 10;
+        }
+        
+        .card-image {
+            width: 100%;
+            height: 250px;
             object-fit: cover;
         }
-
-        .online-indicator {
-            position: absolute;
-            bottom: 0;
-            right: 0;
-            width: 12px;
-            height: 12px;
-            background-color: var(--online-status);
-            border-radius: 50%;
-            border: 2px solid var(--sidebar-bg);
+        
+        .card-content {
+            padding: 15px;
         }
-
-        .offline .online-indicator {
-            background-color: var(--offline-status);
-        }
-
-        .contact-info {
-            flex: 1;
-        }
-
-        .contact-name {
-            font-weight: bold;
+        
+        .card-title {
+            font-weight: 600;
             margin-bottom: 5px;
-        }
-
-        .contact-preview {
-            font-size: 0.85rem;
-            opacity: 0.8;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
         }
-
-        .contact-time {
-            font-size: 0.75rem;
-            opacity: 0.6;
-            margin-top: 5px;
+        
+        .card-info {
+            color: var(--light-gray);
+            font-size: 0.9rem;
+            margin-bottom: 10px;
         }
-
-        .unread-count {
-            background-color: var(--primary-accent);
-            color: white;
-            border-radius: 50%;
-            width: 20px;
-            height: 20px;
+        
+        .card-actions {
             display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 0.7rem;
-            font-weight: bold;
+            justify-content: space-between;
         }
-
-        .chat-area {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            background-color: var(--chat-bg);
-            position: relative;
-        }
-
-        .chat-header {
-            padding: 15px 20px;
-            display: flex;
-            align-items: center;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-            background-color: var(--sidebar-bg);
-            z-index: 5;
-        }
-
-        .current-contact-avatar {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            background-color: var(--secondary-accent);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: bold;
-            margin-right: 15px;
-            overflow: hidden;
-        }
-
-        .current-contact-avatar img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-
-        .current-contact-info {
-            flex: 1;
-        }
-
-        .current-contact-name {
-            font-weight: bold;
-        }
-
-        .current-contact-status {
-            font-size: 0.8rem;
-            color: var(--online-status);
-        }
-
-        .chat-actions {
-            display: flex;
-            gap: 15px;
-        }
-
-        .chat-action-btn {
-            background: none;
+        
+        .action-btn {
+            background-color: transparent;
             border: none;
-            color: var(--text-color);
-            font-size: 1.2rem;
+            color: var(--white);
             cursor: pointer;
-            opacity: 0.8;
-            transition: opacity 0.2s;
+            font-size: 1rem;
         }
-
-        .chat-action-btn:hover {
-            opacity: 1;
+        
+        .action-btn:hover {
+            color: var(--red);
         }
-
-        .messages-container {
-            flex: 1;
-            padding: 20px;
-            overflow-y: auto;
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-        }
-
-        .message {
-            max-width: 70%;
-            padding: 12px 15px;
-            border-radius: 18px;
-            margin-bottom: 5px;
-            position: relative;
-            animation: fadeIn 0.3s ease;
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        .message.sent {
-            align-self: flex-end;
-            background-color: var(--sent-bubble);
-            color: var(--sent-text);
-            border-bottom-right-radius: 5px;
-        }
-
-        .message.received {
-            align-self: flex-start;
-            background-color: var(--received-bubble);
-            color: var(--received-text);
-            border-bottom-left-radius: 5px;
-        }
-
-        .message.group {
-            background-color: var(--group-chat-bubble);
-        }
-
-        .message-time {
-            font-size: 0.7rem;
-            opacity: 0.7;
-            text-align: right;
-            margin-top: 5px;
-        }
-
-        .message-sender {
-            font-size: 0.8rem;
-            font-weight: bold;
-            margin-bottom: 5px;
-        }
-
-        .message-input-container {
-            padding: 15px 20px;
-            display: flex;
-            align-items: center;
-            background-color: var(--sidebar-bg);
-            border-top: 1px solid rgba(255, 255, 255, 0.1);
-        }
-
-        .message-input {
-            flex: 1;
-            padding: 12px 15px;
-            border-radius: 20px;
-            border: none;
-            background-color: var(--input-bg);
-            color: var(--text-color);
-            outline: none;
-            resize: none;
-            max-height: 120px;
-            overflow-y: auto;
-        }
-
-        .input-action-btn {
-            background: none;
-            border: none;
-            color: var(--text-color);
-            font-size: 1.2rem;
-            margin: 0 10px;
-            cursor: pointer;
-            opacity: 0.8;
-            transition: opacity 0.2s;
-        }
-
-        .input-action-btn:hover {
-            opacity: 1;
-        }
-
-        .send-btn {
-            background-color: var(--primary-accent);
-            color: white;
-            border: none;
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            transition: background-color 0.2s;
-        }
-
-        .send-btn:hover {
-            background-color: var(--secondary-accent);
-        }
-
-        .auth-container {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            background-color: var(--bg-color);
-        }
-
-        .auth-form {
-            background-color: var(--sidebar-bg);
-            padding: 30px;
+        
+        /* VIP Section */
+        .vip-section {
+            background: linear-gradient(to right, #8B0000, var(--red));
+            padding: 40px 5%;
+            text-align: center;
+            margin: 40px 0;
             border-radius: 10px;
-            width: 400px;
-            box-shadow: 0 5px 15px var(--shadow-color);
         }
-
-        .auth-form h2 {
-            text-align: center;
-            margin-bottom: 20px;
-            color: var(--primary-accent);
-        }
-
-        .form-group {
+        
+        .vip-section h2 {
+            font-size: 2rem;
             margin-bottom: 20px;
         }
-
-        .form-group label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: bold;
-        }
-
-        .form-group input {
-            width: 100%;
-            padding: 12px;
-            border-radius: 5px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            background-color: var(--input-bg);
-            color: var(--text-color);
-            outline: none;
-        }
-
-        .auth-btn {
-            width: 100%;
-            padding: 12px;
+        
+        .upgrade-button {
+            background-color: var(--white);
+            color: var(--red);
             border: none;
-            border-radius: 5px;
-            background-color: var(--primary-accent);
-            color: white;
-            font-weight: bold;
+            padding: 15px 40px;
+            border-radius: 30px;
+            font-weight: 700;
+            font-size: 1.2rem;
             cursor: pointer;
-            transition: background-color 0.2s;
+            transition: all 0.3s;
         }
-
-        .auth-btn:hover {
-            background-color: var(--secondary-accent);
+        
+        .upgrade-button:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 20px rgba(255, 255, 255, 0.3);
         }
-
-        .auth-switch {
+        
+        /* Footer */
+        footer {
+            background-color: var(--dark-gray);
+            padding: 40px 5%;
             text-align: center;
-            margin-top: 20px;
+        }
+        
+        .footer-links {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin-bottom: 20px;
+        }
+        
+        .footer-links a {
+            color: var(--white);
+            text-decoration: none;
+        }
+        
+        .footer-links a:hover {
+            color: var(--red);
+        }
+        
+        .copyright {
+            color: var(--light-gray);
             font-size: 0.9rem;
         }
-
-        .auth-switch a {
-            color: var(--primary-accent);
-            text-decoration: none;
+        
+        /* AI Assistant */
+        .ai-assistant {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            width: 60px;
+            height: 60px;
+            background-color: var(--red);
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
             cursor: pointer;
+            box-shadow: 0 0 20px rgba(229, 9, 20, 0.5);
+            z-index: 1000;
         }
-
-        .settings-panel {
-            position: absolute;
-            top: 0;
-            right: -400px;
-            width: 400px;
-            height: 100%;
-            background-color: var(--sidebar-bg);
-            box-shadow: -5px 0 15px var(--shadow-color);
-            transition: right 0.3s ease;
-            z-index: 100;
-            overflow-y: auto;
-            padding: 20px;
+        
+        .ai-icon {
+            color: var(--white);
+            font-size: 24px;
         }
-
-        .settings-panel.open {
+        
+        /* Mobile Navigation */
+        .mobile-nav {
+            display: none;
+            position: fixed;
+            bottom: 0;
+            left: 0;
             right: 0;
+            background-color: var(--dark-gray);
+            padding: 15px;
+            justify-content: space-around;
+            z-index: 1000;
         }
-
-        .settings-header {
+        
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            color: var(--light-gray);
+            text-decoration: none;
+            font-size: 0.8rem;
+        }
+        
+        .nav-item.active {
+            color: var(--red);
+        }
+        
+        .nav-icon {
+            font-size: 1.2rem;
+            margin-bottom: 5px;
+        }
+        
+        /* Tablet Layout */
+        @media (min-width: 768px) and (max-width: 1024px) {
+            .content-grid {
+                grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            }
+            
+            .hero h1 {
+                font-size: 2.8rem;
+            }
+        }
+        
+        /* Mobile Layout */
+        @media (max-width: 767px) {
+            header {
+                padding: 15px;
+            }
+            
+            .logo-text {
+                display: none;
+            }
+            
+            .search-bar {
+                margin: 0 10px;
+            }
+            
+            .vip-button {
+                padding: 8px 15px;
+                font-size: 0.9rem;
+            }
+            
+            .hero {
+                height: 60vh;
+                margin-top: 70px;
+            }
+            
+            .hero h1 {
+                font-size: 2.2rem;
+            }
+            
+            .hero p {
+                font-size: 1rem;
+            }
+            
+            .content-grid {
+                grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+                gap: 15px;
+            }
+            
+            .card-image {
+                height: 200px;
+            }
+            
+            .mobile-nav {
+                display: flex;
+            }
+            
+            .section {
+                padding: 30px 15px;
+            }
+            
+            .vip-section h2 {
+                font-size: 1.5rem;
+            }
+        }
+        
+        /* African Pattern Decoration */
+        .african-pattern {
+            background-image: url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 0h100v100H0z' fill='%23E50914' fill-opacity='0.1'/%3E%3Cpath d='M20 20h60v60H20z' stroke='%23E50914' stroke-width='2' fill='none'/%3E%3Cpath d='M30 30h40v40H30z' stroke='%23E50914' stroke-width='1' fill='none'/%3E%3Cpath d='M40 40h20v20H40z' stroke='%23E50914' stroke-width='1' fill='none'/%3E%3C/svg%3E");
+            position: absolute;
+            width: 200px;
+            height: 200px;
+            opacity: 0.1;
+            z-index: -1;
+        }
+        
+        .pattern-1 {
+            top: 10%;
+            left: 5%;
+        }
+        
+        .pattern-2 {
+            bottom: 10%;
+            right: 5%;
+        }
+        
+        /* Chat Popup */
+        .chat-popup {
+            display: none;
+            position: fixed;
+            bottom: 100px;
+            right: 30px;
+            width: 350px;
+            height: 450px;
+            background-color: var(--dark-gray);
+            border-radius: 15px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            flex-direction: column;
+        }
+        
+        .chat-header {
+            background-color: var(--red);
+            padding: 15px;
+            border-top-left-radius: 15px;
+            border-top-right-radius: 15px;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 30px;
         }
-
-        .settings-header h2 {
-            color: var(--primary-accent);
+        
+        .chat-header h3 {
+            font-weight: 600;
         }
-
-        .close-settings {
+        
+        .close-chat {
             background: none;
             border: none;
-            color: var(--text-color);
-            font-size: 1.5rem;
-            cursor: pointer;
-        }
-
-        .settings-section {
-            margin-bottom: 30px;
-        }
-
-        .settings-section h3 {
-            margin-bottom: 15px;
-            padding-bottom: 10px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-        }
-
-        .profile-info {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            margin-bottom: 20px;
-        }
-
-        .profile-avatar {
-            width: 100px;
-            height: 100px;
-            border-radius: 50%;
-            background-color: var(--primary-accent);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: bold;
-            font-size: 2rem;
-            margin-bottom: 15px;
-            overflow: hidden;
-            cursor: pointer;
-            position: relative;
-        }
-
-        .profile-avatar img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-
-        .profile-avatar-edit {
-            position: absolute;
-            bottom: 0;
-            right: 0;
-            background-color: var(--primary-accent);
-            width: 30px;
-            height: 30px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .profile-name {
+            color: var(--white);
             font-size: 1.2rem;
-            font-weight: bold;
-            margin-bottom: 5px;
+            cursor: pointer;
         }
-
-        .profile-bio {
-            opacity: 0.8;
-            text-align: center;
-            margin-bottom: 15px;
-        }
-
-        .profile-status {
-            font-size: 0.9rem;
-            color: var(--online-status);
-        }
-
-        .settings-item {
+        
+        .chat-messages {
+            flex: 1;
             padding: 15px;
-            background-color: var(--input-bg);
-            border-radius: 8px;
-            margin-bottom: 10px;
-            cursor: pointer;
-            transition: background-color 0.2s;
-            display: flex;
-            align-items: center;
+            overflow-y: auto;
         }
-
-        .settings-item i {
-            margin-right: 10px;
-            width: 20px;
-        }
-
-        .settings-item:hover {
-            background-color: rgba(255, 255, 255, 0.1);
-        }
-
-        .developer-info {
-            padding: 20px;
-            background-color: var(--input-bg);
-            border-radius: 8px;
-            margin-top: 30px;
-        }
-
-        .developer-info h4 {
+        
+        .message {
             margin-bottom: 15px;
-            color: var(--primary-accent);
-        }
-
-        .developer-contact {
             display: flex;
-            align-items: center;
-            margin-bottom: 10px;
         }
-
-        .developer-contact i {
-            margin-right: 10px;
-            width: 20px;
-            color: var(--primary-accent);
+        
+        .message.bot {
+            flex-direction: row;
         }
-
-        .overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.5);
-            display: none;
-            z-index: 90;
+        
+        .message.user {
+            flex-direction: row-reverse;
         }
-
-        .overlay.active {
-            display: block;
+        
+        .message-content {
+            background-color: var(--medium-gray);
+            padding: 10px 15px;
+            border-radius: 18px;
+            max-width: 70%;
         }
-
-        .group-create-panel {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background-color: var(--sidebar-bg);
-            padding: 20px;
-            border-radius: 10px;
-            width: 400px;
-            z-index: 110;
-            display: none;
+        
+        .message.bot .message-content {
+            background-color: var(--red);
+            border-top-left-radius: 5px;
         }
-
-        .group-create-panel.open {
-            display: block;
+        
+        .message.user .message-content {
+            background-color: var(--medium-gray);
+            border-top-right-radius: 5px;
         }
-
-        .group-create-panel h3 {
-            margin-bottom: 20px;
-            color: var(--primary-accent);
-        }
-
-        .group-members-select {
-            max-height: 200px;
-            overflow-y: auto;
-            margin: 15px 0;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 5px;
-            padding: 10px;
-        }
-
-        .group-member-item {
+        
+        .chat-input {
             display: flex;
-            align-items: center;
-            padding: 8px;
-            border-radius: 5px;
-            margin-bottom: 5px;
-            cursor: pointer;
-            transition: background-color 0.2s;
-        }
-
-        .group-member-item:hover {
-            background-color: rgba(255, 255, 255, 0.05);
-        }
-
-        .group-member-item.selected {
-            background-color: var(--primary-accent);
-        }
-
-        .group-create-actions {
-            display: flex;
-            justify-content: flex-end;
-            gap: 10px;
-            margin-top: 20px;
-        }
-
-        .typing-indicator {
-            font-size: 0.8rem;
-            font-style: italic;
-            padding: 5px 15px;
-            color: var(--primary-accent);
-        }
-
-        .message-status {
-            font-size: 0.7rem;
-            margin-top: 3px;
-            text-align: right;
-        }
-
-        .discover-users-panel {
-            position: absolute;
-            top: 0;
-            left: -400px;
-            width: 400px;
-            height: 100%;
-            background-color: var(--sidebar-bg);
-            box-shadow: 5px 0 15px var(--shadow-color);
-            transition: left 0.3s ease;
-            z-index: 100;
-            overflow-y: auto;
-            padding: 20px;
-        }
-
-        .discover-users-panel.open {
-            left: 0;
-        }
-
-        .user-item {
             padding: 15px;
-            display: flex;
-            align-items: center;
-            cursor: pointer;
-            transition: background-color 0.2s;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            border-top: 1px solid var(--medium-gray);
         }
-
-        .user-item:hover {
-            background-color: rgba(255, 255, 255, 0.05);
-        }
-
-        .add-contact-btn {
-            background-color: var(--primary-accent);
-            color: white;
+        
+        .chat-input input {
+            flex: 1;
+            padding: 12px 15px;
+            border-radius: 25px;
             border: none;
-            padding: 8px 15px;
-            border-radius: 20px;
-            cursor: pointer;
-            font-size: 0.9rem;
+            background-color: var(--medium-gray);
+            color: var(--white);
         }
-
-        .add-contact-btn:hover {
-            background-color: var(--secondary-accent);
-        }
-
-        .add-contact-btn.added {
-            background-color: var(--offline-status);
-            cursor: default;
-        }
-
-        @media (max-width: 768px) {
-            .sidebar {
-                width: 100%;
-                position: absolute;
-                z-index: 20;
-                transform: translateX(-100%);
-            }
-            
-            .sidebar.active {
-                transform: translateX(0);
-            }
-            
-            .settings-panel, .discover-users-panel {
-                width: 100%;
-                right: -100%;
-            }
-            
-            .discover-users-panel {
-                left: -100%;
-            }
-            
-            .discover-users-panel.open {
-                left: 0;
-            }
-            
-            .group-create-panel {
-                width: 90%;
-            }
-            
-            .menu-toggle {
-                display: block;
-            }
-        }
-
-        .menu-toggle {
-            display: none;
-            background: none;
+        
+        .send-button {
+            background-color: var(--red);
+            color: var(--white);
             border: none;
-            color: var(--text-color);
-            font-size: 1.5rem;
-            margin-right: 15px;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            margin-left: 10px;
             cursor: pointer;
-        }
-
-        .hidden {
-            display: none;
-        }
-
-        .error-message {
-            color: #ff6b6b;
-            margin-top: 10px;
-            text-align: center;
-            font-size: 0.9rem;
-            padding: 8px;
-            background-color: rgba(255, 107, 107, 0.1);
-            border-radius: 5px;
-        }
-
-        .success-message {
-            color: #4CAF50;
-            margin-top: 10px;
-            text-align: center;
-            font-size: 0.9rem;
-            padding: 8px;
-            background-color: rgba(76, 175, 80, 0.1);
-            border-radius: 5px;
         }
     </style>
 </head>
 <body>
-    <!-- Authentication Screen -->
-    <div id="authScreen" class="auth-container">
-        <div class="auth-form" id="loginForm">
-            <h2>Welcome to Gram_X</h2>
-            <div class="form-group">
-                <label for="loginUsername">Username</label>
-                <input type="text" id="loginUsername" placeholder="Enter your username">
-            </div>
-            <div class="form-group">
-                <label for="loginPassword">Password</label>
-                <input type="password" id="loginPassword" placeholder="Enter your password">
-            </div>
-            <button class="auth-btn" onclick="login()">Login</button>
-            <div class="auth-switch">
-                Don't have an account? <a onclick="showRegisterForm()">Register</a>
+    <!-- African pattern decorations -->
+    <div class="african-pattern pattern-1"></div>
+    <div class="african-pattern pattern-2"></div>
+    
+    <!-- Header Navigation -->
+    <header>
+        <div class="logo">
+            <div class="logo-icon">B</div>
+            <div class="logo-text">BeraStream</div>
+        </div>
+        
+        <div class="search-bar">
+            <input type="text" placeholder="Search for movies, music, videos...">
+            <i class="fas fa-search"></i>
+        </div>
+        
+        <button class="vip-button">VIP</button>
+    </header>
+    
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="hero-content">
+            <h1>Your Home of Movies, Music & Vibes</h1>
+            <p>Stream the latest African and international content all in one place</p>
+            <button class="watch-now">Watch Now</button>
+        </div>
+    </section>
+    
+    <!-- Movies Section -->
+    <section class="section">
+        <div class="section-header">
+            <h2 class="section-title">🎬 Movies</h2>
+            <a href="#" class="see-all">See All</a>
+        </div>
+        
+        <div class="content-grid">
+            <!-- Movie content will be loaded dynamically -->
+        </div>
+    </section>
+    
+    <!-- Music Section -->
+    <section class="section">
+        <div class="section-header">
+            <h2 class="section-title">🎵 Music</h2>
+            <a href="#" class="see-all">See All</a>
+        </div>
+        
+        <div class="content-grid">
+            <!-- Music content will be loaded dynamically -->
+        </div>
+    </section>
+    
+    <!-- YouTube Videos Section -->
+    <section class="section">
+        <div class="section-header">
+            <h2 class="section-title">📺 YouTube Videos</h2>
+            <a href="#" class="see-all">See All</a>
+        </div>
+        
+        <div class="content-grid">
+            <!-- YouTube content will be loaded dynamically -->
+        </div>
+    </section>
+    
+    <!-- VIP Section -->
+    <section class="vip-section">
+        <h2>Go Ad-Free + Unlock Exclusive Movies & Music</h2>
+        <button class="upgrade-button">UPGRADE TO VIP</button>
+    </section>
+    
+    <!-- TikTok Videos Section -->
+    <section class="section">
+        <div class="section-header">
+            <h2 class="section-title">🎵 TikTok Videos</h2>
+            <a href="#" class="see-all">See All</a>
+        </div>
+        
+        <div class="content-grid">
+            <!-- TikTok content will be loaded dynamically -->
+        </div>
+    </section>
+    
+    <!-- Footer -->
+    <footer>
+        <div class="footer-links">
+            <a href="#">About</a>
+            <a href="#">Contact</a>
+            <a href="#">Privacy Policy</a>
+        </div>
+        <p class="copyright">© 2025 BeraStream. All rights reserved.</p>
+    </footer>
+    
+    <!-- AI Assistant -->
+    <div class="ai-assistant">
+        <i class="fas fa-robot ai-icon"></i>
+    </div>
+    
+    <!-- Chat Popup -->
+    <div class="chat-popup">
+        <div class="chat-header">
+            <h3>BeraStream AI Assistant</h3>
+            <button class="close-chat"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="chat-messages">
+            <div class="message bot">
+                <div class="message-content">
+                    Hi there! I'm your BeraStream assistant. How can I help you today?
+                </div>
             </div>
         </div>
-
-        <div class="auth-form hidden" id="registerForm">
-            <h2>Create Account</h2>
-            <div class="form-group">
-                <label for="registerUsername">Username *</label>
-                <input type="text" id="registerUsername" placeholder="Choose a username" required>
-            </div>
-            <div class="form-group">
-                <label for="registerPhone">Phone (optional)</label>
-                <input type="text" id="registerPhone" placeholder="Your phone number">
-            </div>
-            <div class="form-group">
-                <label for="registerPassword">Password *</label>
-                <input type="password" id="registerPassword" placeholder="Create a password" required>
-            </div>
-            <div id="registerError" class="error-message hidden"></div>
-            <button class="auth-btn" onclick="register()">Register</button>
-            <div class="auth-switch">
-                Already have an account? <a onclick="showLoginForm()">Login</a>
-            </div>
+        <div class="chat-input">
+            <input type="text" placeholder="Ask about movies, music or anything...">
+            <button class="send-button"><i class="fas fa-paper-plane"></i></button>
         </div>
     </div>
-
-    <!-- Main Chat Interface -->
-    <div id="chatInterface" class="hidden">
-        <div class="header">
-            <button class="menu-toggle" onclick="toggleSidebar()">
-                <i class="fas fa-bars"></i>
-            </button>
-            <h1>Gram_X</h1>
-            <select class="theme-selector" id="themeSelector">
-                <option value="default">Neutral/Dark Modern</option>
-                <option value="whatsapp">WhatsApp-Inspired</option>
-                <option value="neon">Neon/Cyberpunk</option>
-            </select>
-        </div>
-
-        <div class="container">
-            <div class="sidebar">
-                <div class="user-panel">
-                    <div class="user-avatar" id="userAvatar" onclick="openSettings()">
-                        <span id="avatarInitials">U</span>
-                    </div>
-                    <div class="user-info">
-                        <div class="user-name" id="userName">User</div>
-                        <div class="user-status" id="userStatus">Online</div>
-                    </div>
-                    <button class="chat-action-btn" onclick="openSettings()">
-                        <i class="fas fa-cog"></i>
-                    </button>
-                    <button class="chat-action-btn" onclick="logout()">
-                        <i class="fas fa-sign-out-alt"></i>
-                    </button>
-                </div>
-
-                <div class="search-box">
-                    <input type="text" class="search-input" placeholder="Search contacts..." id="searchContacts">
-                </div>
-
-                <div class="sidebar-tabs">
-                    <div class="sidebar-tab active" data-tab="chats">Chats</div>
-                    <div class="sidebar-tab" data-tab="contacts">Contacts</div>
-                    <div class="sidebar-tab" data-tab="discover" onclick="openDiscoverPanel()">Discover</div>
-                </div>
-
-                <div class="contacts-list" id="contactsList">
-                    <!-- Contacts will be populated here -->
-                </div>
-            </div>
-
-            <div class="chat-area">
-                <div class="chat-header">
-                    <div class="current-contact-avatar" id="currentContactAvatar">
-                        <span id="currentContactInitials">S</span>
-                    </div>
-                    <div class="current-contact-info">
-                        <div class="current-contact-name" id="currentContactName">Select a contact</div>
-                        <div class="current-contact-status" id="currentContactStatus">to start chatting</div>
-                    </div>
-                    <div class="chat-actions">
-                        <button class="chat-action-btn">
-                            <i class="fas fa-phone"></i>
-                        </button>
-                        <button class="chat-action-btn">
-                            <i class="fas fa-video"></i>
-                        </button>
-                        <button class="chat-action-btn">
-                            <i class="fas fa-info-circle"></i>
-                        </button>
-                    </div>
-                </div>
-
-                <div class="messages-container" id="messagesContainer">
-                    <!-- Messages will be displayed here -->
-                    <div class="welcome-message">
-                        <p>Welcome to Gram_X! Select a contact to start messaging.</p>
-                    </div>
-                </div>
-
-                <div class="typing-indicator hidden" id="typingIndicator"></div>
-
-                <div class="message-input-container">
-                    <button class="input-action-btn" onclick="toggleEmojiPicker()">
-                        <i class="fas fa-smile"></i>
-                    </button>
-                    <button class="input-action-btn" onclick="document.getElementById('fileInput').click()">
-                        <i class="fas fa-paperclip"></i>
-                    </button>
-                    <textarea class="message-input" id="messageInput" placeholder="Type a message..." rows="1" oninput="handleTyping()"></textarea>
-                    <button class="send-btn" onclick="sendMessage()">
-                        <i class="fas fa-paper-plane"></i>
-                    </button>
-                </div>
-            </div>
-        </div>
-
-        <!-- Settings Panel -->
-        <div class="settings-panel" id="settingsPanel">
-            <div class="settings-header">
-                <h2>Settings</h2>
-                <button class="close-settings" onclick="closeSettings()">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-
-            <div class="profile-info">
-                <div class="profile-avatar" id="profileAvatar">
-                    <span id="profileInitials">U</span>
-                    <div class="profile-avatar-edit" onclick="document.getElementById('avatarInput').click()">
-                        <i class="fas fa-camera"></i>
-                    </div>
-                </div>
-                <div class="profile-name" id="profileName">User Name</div>
-                <div class="profile-bio" id="profileBio">This is my bio</div>
-                <div class="profile-status" id="profileStatus">Online</div>
-            </div>
-
-            <div class="settings-section">
-                <h3>Account</h3>
-                <div class="settings-item" onclick="editProfile()">
-                    <i class="fas fa-user-edit"></i> Edit Profile
-                </div>
-                <div class="settings-item">
-                    <i class="fas fa-lock"></i> Privacy and Security
-                </div>
-                <div class="settings-item">
-                    <i class="fas fa-bell"></i> Notifications
-                </div>
-            </div>
-
-            <div class="settings-section">
-                <h3>Chat Settings</h3>
-                <div class="settings-item">
-                    <i class="fas fa-wallpaper"></i> Chat Background
-                </div>
-                <div class="settings-item">
-                    <i class="fas fa-language"></i> Language
-                </div>
-            </div>
-
-            <div class="settings-section">
-                <h3>About</h3>
-                <div class="settings-item">
-                    <i class="fas fa-info-circle"></i> Gram_X Version 1.0
-                </div>
-                <div class="developer-info">
-                    <h4>Developer Contact</h4>
-                    <div class="developer-contact">
-                        <i class="fas fa-user"></i>
-                        <span>Bruce Bera</span>
-                    </div>
-                    <div class="developer-contact">
-                        <i class="fas fa-phone"></i>
-                        <span>+254743982206</span>
-                    </div>
-                    <div class="developer-contact">
-                        <i class="fas fa-image"></i>
-                        <span><a href="https://i.imgur.com/hwklZjP.jpeg" target="_blank">View Developer Image</a></span>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Discover Users Panel -->
-        <div class="discover-users-panel" id="discoverUsersPanel">
-            <div class="settings-header">
-                <h2>Discover Users</h2>
-                <button class="close-settings" onclick="closeDiscoverPanel()">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-
-            <div class="search-box">
-                <input type="text" class="search-input" placeholder="Search users..." id="searchUsers" oninput="searchUsers()">
-            </div>
-
-            <div class="users-list" id="usersList">
-                <!-- Users will be populated here -->
-            </div>
-        </div>
-
-        <!-- Group Creation Panel -->
-        <div class="group-create-panel" id="groupCreatePanel">
-            <h3>Create New Group</h3>
-            <div class="form-group">
-                <label for="groupName">Group Name</label>
-                <input type="text" id="groupName" placeholder="Enter group name">
-            </div>
-            <div class="form-group">
-                <label for="groupDescription">Group Description (optional)</label>
-                <input type="text" id="groupDescription" placeholder="Enter group description">
-            </div>
-            <label>Select Members</label>
-            <div class="group-members-select" id="groupMembersList">
-                <!-- Members will be populated here -->
-            </div>
-            <div class="group-create-actions">
-                <button class="auth-btn" style="background-color: var(--received-bubble);" onclick="closeGroupPanel()">Cancel</button>
-                <button class="auth-btn" onclick="createGroup()">Create Group</button>
-            </div>
-        </div>
-
-        <div class="overlay" id="overlay" onclick="closePanels()"></div>
-
-        <!-- Hidden file inputs -->
-        <input type="file" id="avatarInput" accept="image/*" style="display: none;" onchange="uploadAvatar()">
-        <input type="file" id="fileInput" accept="image/*, .pdf, .doc, .docx" style="display: none;" onchange="handleFileUpload()">
-    </div>
-
-    <script src="/socket.io/socket.io.js"></script>
+    
+    <!-- Mobile Navigation -->
+    <nav class="mobile-nav">
+        <a href="#" class="nav-item active">
+            <i class="fas fa-home nav-icon"></i>
+            <span>Home</span>
+        </a>
+        <a href="#" class="nav-item">
+            <i class="fas fa-search nav-icon"></i>
+            <span>Search</span>
+        </a>
+        <a href="#" class="nav-item">
+            <i class="fas fa-music nav-icon"></i>
+            <span>Music</span>
+        </a>
+        <a href="#" class="nav-item">
+            <i class="fas fa-film nav-icon"></i>
+            <span>Shorts</span>
+        </a>
+        <a href="#" class="nav-item">
+            <i class="fas fa-user nav-icon"></i>
+            <span>Profile</span>
+        </a>
+        <a href="#" class="nav-item">
+            <i class="fas fa-robot nav-icon"></i>
+            <span>AI</span>
+        </a>
+    </nav>
+    
     <script>
-        // DOM Elements
-        const themeSelector = document.getElementById('themeSelector');
-        const authScreen = document.getElementById('authScreen');
-        const chatInterface = document.getElementById('chatInterface');
-        const loginForm = document.getElementById('loginForm');
-        const registerForm = document.getElementById('registerForm');
-        const contactsList = document.getElementById('contactsList');
-        const usersList = document.getElementById('usersList');
-        const messagesContainer = document.getElementById('messagesContainer');
-        const messageInput = document.getElementById('messageInput');
-        const settingsPanel = document.getElementById('settingsPanel');
-        const discoverUsersPanel = document.getElementById('discoverUsersPanel');
-        const groupCreatePanel = document.getElementById('groupCreatePanel');
-        const groupMembersList = document.getElementById('groupMembersList');
-        const overlay = document.getElementById('overlay');
-        const userAvatar = document.getElementById('userAvatar');
-        const userName = document.getElementById('userName');
-        const userStatus = document.getElementById('userStatus');
-        const currentContactAvatar = document.getElementById('currentContactAvatar');
-        const currentContactName = document.getElementById('currentContactName');
-        const currentContactStatus = document.getElementById('currentContactStatus');
-        const profileAvatar = document.getElementById('profileAvatar');
-        const profileName = document.getElementById('profileName');
-        const profileBio = document.getElementById('profileBio');
-        const profileStatus = document.getElementById('profileStatus');
-        const typingIndicator = document.getElementById('typingIndicator');
-        const searchContacts = document.getElementById('searchContacts');
-        const searchUsers = document.getElementById('searchUsers');
-        const sidebarTabs = document.querySelectorAll('.sidebar-tab');
-        const registerError = document.getElementById('registerError');
+        // Sample data for demonstration
+        const sampleData = {
+            movies: [
+                { title: "The Black King", year: 2023, genre: "Action", image: "https://images.unsplash.com/photo-1489599102910-59206b8ca314?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80" },
+                { title: "Safari Love", year: 2022, genre: "Romance", image: "https://images.unsplash.com/photo-1542204165-65bf26472b9b?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80" },
+                { title: "Lion Heart", year: 2023, genre: "Drama", image: "https://images.unsplash.com/photo-1536440136628-849c177e76a1?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80" },
+                { title: "Juju Legend", year: 2022, genre: "Fantasy", image: "https://images.unsplash.com/photo-1595769816263-9b910be24d5f?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80" },
+                { title: "City Lights", year: 2023, genre: "Comedy", image: "https://images.unsplash.com/photo-1485846234645-a62644f84728?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80" }
+            ],
+            music: [
+                { title: "Afro Beats", artist: "Burna Boy", image: "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80" },
+                { title: "Amapiano", artist: "DJ Maphorisa", image: "https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80" },
+                { title: "Soulful", artist: "Adekunle Gold", image: "https://images.unsplash.com/photo-1470225620780-dba8ba36b745?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80" },
+                { title: "Rhythm", artist: "Wizkid", image: "https://images.unsplash.com/photo-1511379938547-c1f69419868d?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80" },
+                { title: "Vibes", artist: "Davido", image: "https://images.unsplash.com/photo-1511735111819-9a3f7709049c?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80" }
+            ],
+            youtube: [
+                { title: "African Dance Challenge", category: "Trending", image: "https://i.ytimg.com/vi/6stlCkUDG_s/maxresdefault.jpg" },
+                { title: "Nigerian Cooking", category: "Food & Travel", image: "https://i.ytimg.com/vi/4rz9OD5e3tM/maxresdefault.jpg" },
+                { title: "South African Safari", category: "Travel Vlog", image: "https://i.ytimg.com/vi/4_VQ9uW2o_4/maxresdefault.jpg" },
+                { title: "Ghana Music Festival", category: "Music", image: "https://i.ytimg.com/vi/7KZ1F9oN0Mw/maxresdefault.jpg" },
+                { title: "Nollywood Behind Scenes", category: "Entertainment", image: "https://i.ytimg.com/vi/1oJ2t8k5C8o/maxresdefault.jpg" }
+            ],
+            tiktok: [
+                { title: "Dance Challenge", views: "2.5M views", image: "https://images.unsplash.com/photo-1611605698335-8b156e8e4c1a?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80" },
+                { title: "Comedy Skit", views: "1.8M views", image: "https://images.unsplash.com/photo-1616469829476-8953c5655574?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80" },
+                { title: "Cooking Tutorial", views: "3.1M views", image: "https://images.unsplash.com/photo-1611605698335-8b156e8e4c1a?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80" },
+                { title: "Life Hacks", views: "4.2M views", image: "https://images.unsplash.com/photo-1616469829476-8953c5655574?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80" },
+                { title: "Travel Vlog", views: "2.9M views", image: "https://images.unsplash.com/photo-1611605698335-8b156e8e4c1a?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80" }
+            ]
+        };
 
-        // Global variables
-        let socket;
-        let currentUser = null;
-        let currentContact = null;
-        let currentChatType = 'individual'; // 'individual' or 'group'
-        let contacts = [];
-        let allUsers = [];
-        let groups = [];
-        let messages = {};
-        let groupMessages = {};
-        let typingTimeout = null;
-        let selectedMembers = new Set();
-
-        // Initialize the application
-        function init() {
-            // Check if user is logged in
-            const token = localStorage.getItem('token');
-            if (token) {
-                // Validate token with server
-                fetch('/api/user/me', {
-                    headers: {
-                        'Authorization': `Bearer ${token}`
-                    }
-                })
-                .then(response => {
-                    if (response.ok) {
-                        return response.json();
-                    } else {
-                        throw new Error('Invalid token');
-                    }
-                })
-                .then(user => {
-                    currentUser = user;
-                    showChatInterface();
-                    connectSocket();
-                    loadContacts();
-                    updateProfileInfo();
-                })
-                .catch(error => {
-                    console.error('Token validation failed:', error);
-                    localStorage.removeItem('token');
-                    showAuthScreen();
-                });
+        // Header scroll effect
+        window.addEventListener('scroll', function() {
+            const header = document.querySelector('header');
+            if (window.scrollY > 50) {
+                header.classList.add('scrolled');
             } else {
-                showAuthScreen();
+                header.classList.remove('scrolled');
             }
+        });
 
-            // Theme selector event listener
-            themeSelector.addEventListener('change', (e) => {
-                document.body.setAttribute('data-theme', e.target.value);
-                localStorage.setItem('theme', e.target.value);
+        // Load content dynamically
+        document.addEventListener('DOMContentLoaded', function() {
+            loadContent('movies', '.section:nth-child(2) .content-grid');
+            loadContent('music', '.section:nth-child(3) .content-grid');
+            loadContent('youtube', '.section:nth-child(4) .content-grid');
+            loadContent('tiktok', '.section:nth-child(6) .content-grid');
+            
+            // Set up AI chat functionality
+            setupChat();
+        });
+
+        // Function to load content into sections
+        function loadContent(type, selector) {
+            const container = document.querySelector(selector);
+            const items = sampleData[type];
+            
+            items.forEach(item => {
+                const card = document.createElement('div');
+                card.className = 'content-card';
+                
+                let infoText = '';
+                if (type === 'movies') {
+                    infoText = `${item.year} • ${item.genre}`;
+                } else if (type === 'music') {
+                    infoText = item.artist;
+                } else if (type === 'youtube') {
+                    infoText = item.category;
+                } else if (type === 'tiktok') {
+                    infoText = item.views;
+                }
+                
+                card.innerHTML = `
+                    <img src="${item.image}" alt="${item.title}" class="card-image">
+                    <div class="card-content">
+                        <h3 class="card-title">${item.title}</h3>
+                        <p class="card-info">${infoText}</p>
+                        <div class="card-actions">
+                            <button class="action-btn"><i class="fas fa-play"></i></button>
+                            ${type === 'movies' || type === 'music' ? '<button class="action-btn"><i class="fas fa-download"></i></button>' : ''}
+                        </div>
+                    </div>
+                `;
+                
+                container.appendChild(card);
             });
+            
+            // Add event listeners to action buttons
+            container.querySelectorAll('.action-btn .fa-play').forEach(button => {
+                button.addEventListener('click', function() {
+                    alert('Playing content...');
+                });
+            });
+            
+            container.querySelectorAll('.action-btn .fa-download').forEach(button => {
+                button.addEventListener('click', function() {
+                    alert('Downloading content...');
+                });
+            });
+        }
 
-            // Load saved theme
-            const savedTheme = localStorage.getItem('theme');
-            if (savedTheme) {
-                document.body.setAttribute('data-theme', savedTheme);
-                themeSelector.value = savedTheme;
+        // Set up AI chat functionality
+        function setupChat() {
+            const aiAssistant = document.querySelector('.ai-assistant');
+            const chatPopup = document.querySelector('.chat-popup');
+            const closeChat = document.querySelector('.close-chat');
+            const sendButton = document.querySelector('.send-button');
+            const chatInput = document.querySelector('.chat-input input');
+            const chatMessages = document.querySelector('.chat-messages');
+            
+            aiAssistant.addEventListener('click', function() {
+                chatPopup.style.display = 'flex';
+            });
+            
+            closeChat.addEventListener('click', function() {
+                chatPopup.style.display = 'none';
+            });
+            
+            function sendMessage() {
+                const message = chatInput.value.trim();
+                if (message) {
+                    // Add user message
+                    addMessage(message, 'user');
+                    chatInput.value = '';
+                    
+                    // Simulate AI response after a short delay
+                    setTimeout(() => {
+                        let response = "I'm sorry, I can't process your request right now. This is a demo version.";
+                        
+                        if (message.toLowerCase().includes('movie')) {
+                            response = "I recommend checking out 'The Black King' in our Movies section. It's trending right now!";
+                        } else if (message.toLowerCase().includes('music')) {
+                            response = "We have great Afrobeat playlists from Burna Boy and Wizkid. Check out the Music section!";
+                        } else if (message.toLowerCase().includes('help')) {
+                            response = "I can help you find movies, music, or answer questions about BeraStream. What do you need?";
+                        }
+                        
+                        addMessage(response, 'bot');
+                    }, 1000);
+                }
             }
-
-            // Message input auto-resize
-            messageInput.addEventListener('input', function() {
-                this.style.height = 'auto';
-                this.style.height = (this.scrollHeight) + 'px';
-            });
-
-            // Send message on Enter key (but allow Shift+Enter for new line)
-            messageInput.addEventListener('keypress', (e) => {
-                if (e.key === 'Enter' && !e.shiftKey) {
-                    e.preventDefault();
+            
+            sendButton.addEventListener('click', sendMessage);
+            chatInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
                     sendMessage();
                 }
             });
-
-            // Search contacts
-            searchContacts.addEventListener('input', filterContacts);
-
-            // Sidebar tabs
-            sidebarTabs.forEach(tab => {
-                tab.addEventListener('click', () => {
-                    const tabName = tab.getAttribute('data-tab');
-                    if (tabName === 'discover') return; // Handled separately
-                    
-                    sidebarTabs.forEach(t => t.classList.remove('active'));
-                    tab.classList.add('active');
-                    switchTab(tabName);
-                });
-            });
-        }
-
-        // Switch between tabs
-        function switchTab(tabName) {
-            if (tabName === 'chats') {
-                loadContacts();
-            } else if (tabName === 'contacts') {
-                loadContacts();
-            }
-        }
-
-        // Filter contacts based on search input
-        function filterContacts() {
-            const searchTerm = searchContacts.value.toLowerCase();
-            const contactElements = contactsList.querySelectorAll('.contact, .group-item');
             
-            contactElements.forEach(element => {
-                const name = element.querySelector('.contact-name').textContent.toLowerCase();
-                if (name.includes(searchTerm)) {
-                    element.style.display = 'flex';
-                } else {
-                    element.style.display = 'none';
-                }
-            });
-        }
-
-        // Authentication functions
-        function showAuthScreen() {
-            authScreen.classList.remove('hidden');
-            chatInterface.classList.add('hidden');
-        }
-
-        function showChatInterface() {
-            authScreen.classList.add('hidden');
-            chatInterface.classList.remove('hidden');
-        }
-
-        function showLoginForm() {
-            loginForm.classList.remove('hidden');
-            registerForm.classList.add('hidden');
-            hideError();
-        }
-
-        function showRegisterForm() {
-            loginForm.classList.add('hidden');
-            registerForm.classList.remove('hidden');
-            hideError();
-        }
-
-        function showError(message) {
-            registerError.textContent = message;
-            registerError.classList.remove('hidden');
-        }
-
-        function hideError() {
-            registerError.classList.add('hidden');
-        }
-
-        function login() {
-            const username = document.getElementById('loginUsername').value;
-            const password = document.getElementById('loginPassword').value;
-
-            if (!username || !password) {
-                alert('Please enter both username and password');
-                return;
-            }
-
-            fetch('/api/login', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ username, password })
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.token) {
-                    localStorage.setItem('token', data.token);
-                    currentUser = data.user;
-                    showChatInterface();
-                    connectSocket();
-                    loadContacts();
-                    updateProfileInfo();
-                } else {
-                    alert('Login failed: ' + data.error);
-                }
-            })
-            .catch(error => {
-                console.error('Login error:', error);
-                alert('Login failed. Please try again.');
-            });
-        }
-
-        function register() {
-            hideError();
-            
-            const username = document.getElementById('registerUsername').value;
-            const phone = document.getElementById('registerPhone').value;
-            const password = document.getElementById('registerPassword').value;
-
-            // Basic validation
-            if (!username || !password) {
-                showError('Username and password are required');
-                return;
-            }
-
-            fetch('/api/register', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ username, phone, password })
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.token) {
-                    localStorage.setItem('token', data.token);
-                    currentUser = data.user;
-                    showChatInterface();
-                    connectSocket();
-                    loadContacts();
-                    updateProfileInfo();
-                } else {
-                    showError('Registration failed: ' + data.error);
-                }
-            })
-            .catch(error => {
-                console.error('Registration error:', error);
-                showError('Registration failed. Please try again.');
-            });
-        }
-
-        function logout() {
-            fetch('/api/logout', {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${localStorage.getItem('token')}`
-                }
-            })
-            .then(() => {
-                localStorage.removeItem('token');
-                if (socket) socket.disconnect();
-                showAuthScreen();
-            })
-            .catch(error => {
-                console.error('Logout error:', error);
-                localStorage.removeItem('token');
-                showAuthScreen();
-            });
-        }
-
-        // Socket.io functions
-        function connectSocket() {
-            socket = io();
-            
-            socket.on('connect', () => {
-                console.log('Connected to server');
-                socket.emit('join', currentUser.id);
-            });
-
-            socket.on('receiveMessage', (message) => {
-                addMessageToUI(message, false);
-                // Update contact list with last message
-                updateContactLastMessage(message);
-            });
-
-            socket.on('receiveGroupMessage', (message) => {
-                addGroupMessageToUI(message, false);
-                // Update group list with last message
-                updateGroupLastMessage(message);
-            });
-
-            socket.on('messageSent', (message) => {
-                // Message was successfully sent and saved
-                addMessageToUI(message, true);
-            });
-
-            socket.on('groupMessageSent', (message) => {
-                // Group message was successfully sent and saved
-                addGroupMessageToUI(message, true);
-            });
-
-            socket.on('userTyping', (data) => {
-                if (data.senderId === currentContact?._id) {
-                    showTypingIndicator(data.isTyping);
-                }
-            });
-
-            socket.on('error', (error) => {
-                console.error('Socket error:', error);
-                alert('Error: ' + error.message);
-            });
-        }
-
-        // Contact and message functions
-        function loadContacts() {
-            fetch('/api/contacts', {
-                headers: {
-                    'Authorization': `Bearer ${localStorage.getItem('token')}`
-                }
-            })
-            .then(response => response.json())
-            .then(contactsData => {
-                contacts = contactsData;
-                renderContacts(contactsData);
-            })
-            .catch(error => {
-                console.error('Failed to load contacts:', error);
-            });
-        }
-
-        function loadAllUsers() {
-            fetch('/api/users', {
-                headers: {
-                    'Authorization': `Bearer ${localStorage.getItem('token')}`
-                }
-            })
-            .then(response => response.json())
-            .then(users => {
-                allUsers = users;
-                renderUsers(users);
-            })
-            .catch(error => {
-                console.error('Failed to load users:', error);
-            });
-        }
-
-        function searchUsers() {
-            const query = searchUsers.value;
-            if (query.length < 2) {
-                renderUsers(allUsers);
-                return;
-            }
-
-            fetch(`/api/users/search/${query}`, {
-                headers: {
-                    'Authorization': `Bearer ${localStorage.getItem('token')}`
-                }
-            })
-            .then(response => response.json())
-            .then(users => {
-                renderUsers(users);
-            })
-            .catch(error => {
-                console.error('Failed to search users:', error);
-            });
-        }
-
-        function loadGroups() {
-            fetch('/api/groups', {
-                headers: {
-                    'Authorization': `Bearer ${localStorage.getItem('token')}`
-                }
-            })
-            .then(response => response.json())
-            .then(groupsData => {
-                groups = groupsData;
-                renderGroups(groupsData);
-            })
-            .catch(error => {
-                console.error('Failed to load groups:', error);
-            });
-        }
-
-        function renderContacts(contacts) {
-            contactsList.innerHTML = '';
-            
-            if (contacts.length === 0) {
-                contactsList.innerHTML = `
-                    <div style="padding: 20px; text-align: center; color: var(--text-color); opacity: 0.7;">
-                        <p>No contacts yet. Use the Discover tab to find users.</p>
-                    </div>
-                `;
-                return;
-            }
-            
-            contacts.forEach(contact => {
-                const contactEl = document.createElement('div');
-                contactEl.className = 'contact';
-                contactEl.dataset.id = contact._id;
-                contactEl.dataset.type = 'individual';
+            function addMessage(text, sender) {
+                const messageDiv = document.createElement('div');
+                messageDiv.className = `message ${sender}`;
                 
-                // Generate initials for avatar
-                const initials = contact.profile.firstName && contact.profile.lastName 
-                    ? `${contact.profile.firstName[0]}${contact.profile.lastName[0]}` 
-                    : contact.username[0].toUpperCase();
+                const contentDiv = document.createElement('div');
+                contentDiv.className = 'message-content';
+                contentDiv.textContent = text;
                 
-                const statusClass = contact.isOnline ? '' : 'offline';
-                const statusText = contact.isOnline ? 'Online' : formatLastSeen(contact.profile.lastSeen);
+                messageDiv.appendChild(contentDiv);
+                chatMessages.appendChild(messageDiv);
                 
-                contactEl.innerHTML = `
-                    <div class="contact-avatar ${statusClass}">
-                        ${contact.profile.avatar ? `<img src="${contact.profile.avatar}" alt="${contact.username}">` : `<span>${initials}</span>`}
-                        <div class="online-indicator"></div>
-                    </div>
-                    <div class="contact-info">
-                        <div class="contact-name">${contact.username}</div>
-                        <div class="contact-preview">Start a conversation</div>
-                        <div class="contact-time">${statusText}</div>
-                    </div>
-                    <div class="unread-count hidden">0</div>
-                `;
-                
-                contactEl.addEventListener('click', () => selectContact(contact));
-                contactsList.appendChild(contactEl);
-            });
-
-            // Add create group button
-            const createGroupEl = document.createElement('div');
-            createGroupEl.className = 'contact';
-            createGroupEl.innerHTML = `
-                <div class="contact-avatar" style="background-color: var(--group-chat-bubble);">
-                    <i class="fas fa-users"></i>
-                </div>
-                <div class="contact-info">
-                    <div class="contact-name">New Group</div>
-                    <div class="contact-preview">Create a group chat</div>
-                </div>
-            `;
-            createGroupEl.addEventListener('click', openGroupPanel);
-            contactsList.appendChild(createGroupEl);
-        }
-
-        function renderUsers(users) {
-            usersList.innerHTML = '';
-            
-            if (users.length === 0) {
-                usersList.innerHTML = `
-                    <div style="padding: 20px; text-align: center; color: var(--text-color); opacity: 0.7;">
-                        <p>No users found.</p>
-                    </div>
-                `;
-                return;
-            }
-            
-            users.forEach(user => {
-                // Check if user is already in contacts
-                const isInContacts = contacts.some(contact => contact._id === user._id);
-                
-                const userEl = document.createElement('div');
-                userEl.className = 'user-item';
-                userEl.dataset.id = user._id;
-                
-                // Generate initials for avatar
-                const initials = user.profile.firstName && user.profile.lastName 
-                    ? `${user.profile.firstName[0]}${user.profile.lastName[0]}` 
-                    : user.username[0].toUpperCase();
-                
-                const statusClass = user.isOnline ? '' : 'offline';
-                const statusText = user.isOnline ? 'Online' : formatLastSeen(user.profile.lastSeen);
-                
-                userEl.innerHTML = `
-                    <div class="contact-avatar ${statusClass}">
-                        ${user.profile.avatar ? `<img src="${user.profile.avatar}" alt="${user.username}">` : `<span>${initials}</span>`}
-                        <div class="online-indicator"></div>
-                    </div>
-                    <div class="contact-info">
-                        <div class="contact-name">${user.username}</div>
-                        <div class="contact-preview">${user.profile.bio || 'No bio'}</div>
-                        <div class="contact-time">${statusText}</div>
-                    </div>
-                    <button class="add-contact-btn ${isInContacts ? 'added' : ''}" onclick="addContact('${user._id}', this)">
-                        ${isInContacts ? 'Added' : 'Add'}
-                    </button>
-                `;
-                
-                usersList.appendChild(userEl);
-            });
-        }
-
-        function addContact(userId, button) {
-            fetch(`/api/contacts/${userId}`, {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${localStorage.getItem('token')}`
-                }
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.message) {
-                    button.textContent = 'Added';
-                    button.classList.add('added');
-                    loadContacts(); // Refresh contacts list
-                } else {
-                    alert('Failed to add contact: ' + data.error);
-                }
-            })
-            .catch(error => {
-                console.error('Add contact error:', error);
-                alert('Failed to add contact');
-            });
-        }
-
-        function renderGroups(groups) {
-            // Groups rendering logic
-        }
-
-        function formatLastSeen(dateString) {
-            if (!dateString) return 'Long time ago';
-            
-            const date = new Date(dateString);
-            const now = new Date();
-            const diffMs = now - date;
-            const diffMins = Math.round(diffMs / (1000 * 60));
-            const diffHours = Math.round(diffMs / (1000 * 60 * 60));
-            const diffDays = Math.round(diffMs / (1000 * 60 * 60 * 24));
-            
-            if (diffMins < 1) return 'Just now';
-            if (diffMins < 60) return `${diffMins} min ago`;
-            if (diffHours < 24) return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
-            if (diffDays < 7) return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
-            
-            return date.toLocaleDateString();
-        }
-
-        function selectContact(contact) {
-            currentContact = contact;
-            currentChatType = 'individual';
-            
-            // Update UI
-            document.querySelectorAll('.contact').forEach(el => {
-                el.classList.remove('active');
-                if (el.dataset.id === contact._id && el.dataset.type === 'individual') {
-                    el.classList.add('active');
-                }
-            });
-            
-            // Generate initials for avatar
-            const initials = contact.profile.firstName && contact.profile.lastName 
-                ? `${contact.profile.firstName[0]}${contact.profile.lastName[0]}` 
-                : contact.username[0].toUpperCase();
-            
-            currentContactAvatar.innerHTML = contact.profile.avatar 
-                ? `<img src="${contact.profile.avatar}" alt="${contact.username}">` 
-                : `<span>${initials}</span>`;
-            currentContactName.textContent = contact.username;
-            currentContactStatus.textContent = contact.isOnline ? 'Online' : formatLastSeen(contact.profile.lastSeen);
-            
-            // Load messages
-            loadMessages(contact._id);
-
-            // Mark messages as read
-            markMessagesAsRead(contact._id);
-        }
-
-        function selectGroup(group) {
-            // Group selection logic
-        }
-
-        function loadMessages(contactId) {
-            fetch(`/api/messages/${contactId}`, {
-                headers: {
-                    'Authorization': `Bearer ${localStorage.getItem('token')}`
-                }
-            })
-            .then(response => response.json())
-            .then(messages => {
-                renderMessages(messages);
-            })
-            .catch(error => {
-                console.error('Failed to load messages:', error);
-            });
-        }
-
-        function loadGroupMessages(groupId) {
-            // Group messages loading logic
-        }
-
-        function markMessagesAsRead(contactId) {
-            fetch(`/api/messages/read/${contactId}`, {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${localStorage.getItem('token')}`
-                }
-            })
-            .catch(error => {
-                console.error('Failed to mark messages as read:', error);
-            });
-        }
-
-        function renderMessages(messages) {
-            messagesContainer.innerHTML = '';
-            
-            if (messages.length === 0) {
-                messagesContainer.innerHTML = `
-                    <div class="welcome-message">
-                        <p>No messages yet. Start a conversation with ${currentContact.username}!</p>
-                    </div>
-                `;
-                return;
-            }
-            
-            messages.forEach(message => {
-                const isSent = message.sender._id === currentUser.id;
-                addMessageToUI(message, isSent);
-            });
-            
-            // Scroll to bottom
-            messagesContainer.scrollTop = messagesContainer.scrollHeight;
-        }
-
-        function renderGroupMessages(messages) {
-            // Group messages rendering logic
-        }
-
-        function addMessageToUI(message, isSent) {
-            const messageEl = document.createElement('div');
-            messageEl.className = `message ${isSent ? 'sent' : 'received'}`;
-            
-            const time = new Date(message.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-            
-            let content = message.content;
-            if (message.type === 'image') {
-                content = `<img src="${message.fileUrl}" style="max-width: 100%; border-radius: 8px;" alt="Shared image">`;
-            } else if (message.type === 'file') {
-                content = `<div><i class="fas fa-file"></i> ${message.fileName || 'File'}</div>`;
-            }
-            
-            messageEl.innerHTML = `
-                <div class="message-content">${content}</div>
-                <div class="message-time">${time}</div>
-                ${isSent ? '<div class="message-status">' + (message.read ? 'Read' : 'Sent') + '</div>' : ''}
-            `;
-            
-            messagesContainer.appendChild(messageEl);
-            
-            // Scroll to bottom
-            messagesContainer.scrollTop = messagesContainer.scrollHeight;
-        }
-
-        function addGroupMessageToUI(message, isSent) {
-            // Group message UI logic
-        }
-
-        function sendMessage() {
-            if (!currentContact || !messageInput.value.trim()) return;
-            
-            const content = messageInput.value.trim();
-            
-            if (currentChatType === 'individual') {
-                socket.emit('sendMessage', {
-                    senderId: currentUser.id,
-                    receiverId: currentContact._id,
-                    content,
-                    type: 'text'
-                });
-            } else {
-                // Group message sending logic
-            }
-            
-            // Clear input
-            messageInput.value = '';
-            messageInput.style.height = 'auto';
-            
-            // Reset typing indicator
-            if (typingTimeout) {
-                clearTimeout(typingTimeout);
-                typingTimeout = null;
-            }
-            socket.emit('typing', {
-                senderId: currentUser.id,
-                receiverId: currentContact._id,
-                isTyping: false
-            });
-        }
-
-        function handleTyping() {
-            if (!currentContact || currentChatType !== 'individual') return;
-            
-            // Emit typing event
-            socket.emit('typing', {
-                senderId: currentUser.id,
-                receiverId: currentContact._id,
-                isTyping: true
-            });
-            
-            // Set timeout to stop typing indicator
-            if (typingTimeout) {
-                clearTimeout(typingTimeout);
-            }
-            
-            typingTimeout = setTimeout(() => {
-                socket.emit('typing', {
-                    senderId: currentUser.id,
-                    receiverId: currentContact._id,
-                    isTyping: false
-                });
-                typingTimeout = null;
-            }, 1000);
-        }
-
-        function showTypingIndicator(isTyping) {
-            if (isTyping) {
-                typingIndicator.textContent = `${currentContact.username} is typing...`;
-                typingIndicator.classList.remove('hidden');
-            } else {
-                typingIndicator.classList.add('hidden');
+                // Scroll to bottom
+                chatMessages.scrollTop = chatMessages.scrollHeight;
             }
         }
 
-        function handleFileUpload() {
-            const fileInput = document.getElementById('fileInput');
-            const file = fileInput.files[0];
-            
-            if (!file) return;
-            
-            // For now, we'll just send a text message about the file
-            const fileName = file.name;
-            messageInput.value = `File: ${fileName}`;
-        }
-
-        function updateContactLastMessage(message) {
-            const contactEl = document.querySelector(`.contact[data-id="${message.sender._id}"][data-type="individual"]`);
-            if (contactEl) {
-                const preview = contactEl.querySelector('.contact-preview');
-                const time = contactEl.querySelector('.contact-time');
-                
-                preview.textContent = message.content;
-                time.textContent = new Date(message.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-                
-                // Show unread count if message is from someone else and not read
-                if (message.sender._id !== currentUser.id && !message.read) {
-                    const unreadCountEl = contactEl.querySelector('.unread-count');
-                    let count = parseInt(unreadCountEl.textContent || '0');
-                    count++;
-                    unreadCountEl.textContent = count;
-                    unreadCountEl.classList.remove('hidden');
-                }
+        // Simulate API integration (would be replaced with actual API calls)
+        document.querySelector('.search-bar input').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                alert('Searching for: ' + this.value);
+                this.value = '';
             }
-        }
-
-        function updateGroupLastMessage(message) {
-            // Group last message update logic
-        }
-
-        // Settings functions
-        function openSettings() {
-            settingsPanel.classList.add('open');
-            overlay.classList.add('active');
-        }
-
-        function closeSettings() {
-            settingsPanel.classList.remove('open');
-            overlay.classList.remove('active');
-        }
-
-        function openDiscoverPanel() {
-            discoverUsersPanel.classList.add('open');
-            overlay.classList.add('active');
-            loadAllUsers();
-        }
-
-        function closeDiscoverPanel() {
-            discoverUsersPanel.classList.remove('open');
-            overlay.classList.remove('active');
-        }
-
-        function closePanels() {
-            closeSettings();
-            closeDiscoverPanel();
-            closeGroupPanel();
-        }
-
-        function updateProfileInfo() {
-            if (!currentUser) return;
-            
-            // Generate initials for avatar
-            const initials = currentUser.profile.firstName && currentUser.profile.lastName 
-                ? `${currentUser.profile.firstName[0]}${currentUser.profile.lastName[0]}` 
-                : currentUser.username[0].toUpperCase();
-            
-            // Update user panel
-            if (currentUser.profile.avatar) {
-                userAvatar.innerHTML = `<img src="${currentUser.profile.avatar}" alt="${currentUser.username}">`;
-            } else {
-                userAvatar.innerHTML = `<span>${initials}</span>`;
-            }
-            userName.textContent = currentUser.username;
-            userStatus.textContent = currentUser.isOnline ? 'Online' : 'Offline';
-            
-            // Update profile in settings
-            if (currentUser.profile.avatar) {
-                profileAvatar.innerHTML = `
-                    <img src="${currentUser.profile.avatar}" alt="${currentUser.username}">
-                    <div class="profile-avatar-edit" onclick="document.getElementById('avatarInput').click()">
-                        <i class="fas fa-camera"></i>
-                    </div>
-                `;
-            } else {
-                profileAvatar.innerHTML = `
-                    <span>${initials}</span>
-                    <div class="profile-avatar-edit" onclick="document.getElementById('avatarInput').click()">
-                        <i class="fas fa-camera"></i>
-                    </div>
-                `;
-            }
-            profileName.textContent = currentUser.username;
-            profileBio.textContent = currentUser.profile.bio || 'No bio set';
-            profileStatus.textContent = currentUser.isOnline ? 'Online' : `Last seen ${formatLastSeen(currentUser.profile.lastSeen)}`;
-        }
-
-        function editProfile() {
-            const firstName = prompt('First Name', currentUser.profile.firstName || '');
-            const lastName = prompt('Last Name', currentUser.profile.lastName || '');
-            const bio = prompt('Bio', currentUser.profile.bio || '');
-            
-            if (firstName !== null) {
-                fetch('/api/user/profile', {
-                    method: 'PUT',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${localStorage.getItem('token')}`
-                    },
-                    body: JSON.stringify({ firstName, lastName, bio })
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.profile) {
-                        currentUser.profile = data.profile;
-                        updateProfileInfo();
-                        alert('Profile updated successfully');
-                    } else {
-                        alert('Failed to update profile: ' + data.error);
-                    }
-                })
-                .catch(error => {
-                    console.error('Profile update error:', error);
-                    alert('Failed to update profile');
-                });
-            }
-        }
-
-        function uploadAvatar() {
-            const fileInput = document.getElementById('avatarInput');
-            const file = fileInput.files[0];
-            
-            if (!file) return;
-            
-            const formData = new FormData();
-            formData.append('avatar', file);
-            
-            fetch('/api/user/avatar', {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${localStorage.getItem('token')}`
-                },
-                body: formData
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.avatar) {
-                    currentUser.profile.avatar = data.avatar;
-                    updateProfileInfo();
-                    alert('Avatar updated successfully');
-                } else {
-                    alert('Failed to update avatar: ' + data.error);
-                }
-            })
-            .catch(error => {
-                console.error('Avatar upload error:', error);
-                alert('Failed to update avatar');
-            });
-        }
-
-        // Group functions
-        function openGroupPanel() {
-            groupCreatePanel.classList.add('open');
-            overlay.classList.add('active');
-            
-            // Load users for group creation
-            fetch('/api/users', {
-                headers: {
-                    'Authorization': `Bearer ${localStorage.getItem('token')}`
-                }
-            })
-            .then(response => response.json())
-            .then(users => {
-                renderGroupMembers(users);
-            })
-            .catch(error => {
-                console.error('Failed to load users for group:', error);
-            });
-        }
-
-        function closeGroupPanel() {
-            groupCreatePanel.classList.remove('open');
-            overlay.classList.remove('active');
-            selectedMembers.clear();
-        }
-
-        function renderGroupMembers(users) {
-            groupMembersList.innerHTML = '';
-            
-            users.forEach(user => {
-                if (user._id === currentUser.id) return; // Skip current user
-                
-                const memberEl = document.createElement('div');
-                memberEl.className = 'group-member-item';
-                memberEl.dataset.id = user._id;
-                
-                // Generate initials for avatar
-                const initials = user.profile.firstName && user.profile.lastName 
-                    ? `${user.profile.firstName[0]}${user.profile.lastName[0]}` 
-                    : user.username[0].toUpperCase();
-                
-                memberEl.innerHTML = `
-                    <div class="contact-avatar">
-                        ${user.profile.avatar ? `<img src="${user.profile.avatar}" alt="${user.username}">` : `<span>${initials}</span>`}
-                    </div>
-                    <div class="contact-name">${user.username}</div>
-                `;
-                
-                memberEl.addEventListener('click', () => {
-                    memberEl.classList.toggle('selected');
-                    if (memberEl.classList.contains('selected')) {
-                        selectedMembers.add(user._id);
-                    } else {
-                        selectedMembers.delete(user._id);
-                    }
-                });
-                
-                groupMembersList.appendChild(memberEl);
-            });
-        }
-
-        function createGroup() {
-            const groupName = document.getElementById('groupName').value;
-            const groupDescription = document.getElementById('groupDescription').value;
-            
-            if (!groupName) {
-                alert('Please enter a group name');
-                return;
-            }
-            
-            if (selectedMembers.size === 0) {
-                alert('Please select at least one member');
-                return;
-            }
-            
-            const members = Array.from(selectedMembers);
-            
-            fetch('/api/groups', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${localStorage.getItem('token')}`
-                },
-                body: JSON.stringify({ 
-                    name: groupName, 
-                    description: groupDescription,
-                    members 
-                })
-            })
-            .then(response => response.json())
-            .then(group => {
-                groups.push(group);
-                renderGroups(groups);
-                closeGroupPanel();
-                alert('Group created successfully');
-            })
-            .catch(error => {
-                console.error('Group creation error:', error);
-                alert('Failed to create group');
-            });
-        }
-
-        function toggleSidebar() {
-            document.querySelector('.sidebar').classList.toggle('active');
-        }
-
-        function toggleEmojiPicker() {
-            // This would open an emoji picker in a real app
-            alert('Emoji picker would open here');
-        }
-
-        // Initialize the app when the page loads
-        document.addEventListener('DOMContentLoaded', init);
+        });
+        
+        // VIP button action
+        document.querySelector('.vip-button').addEventListener('click', function() {
+            alert('Redirecting to VIP subscription page...');
+        });
+        
+        // Watch Now button action
+        document.querySelector('.watch-now').addEventListener('click', function() {
+            alert('Starting featured content...');
+        });
+        
+        // Upgrade button action
+        document.querySelector('.upgrade-button').addEventListener('click', function() {
+            alert('Redirecting to VIP upgrade page...');
+        });
     </script>
 </body>
 </html>
