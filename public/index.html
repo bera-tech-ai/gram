@@ -13,13 +13,14 @@
             --gray: #1F1F1F;
             --light-gray: #3D3D3D;
             --dark-red: #8B0000;
+            --gold: #FFD700;
         }
         
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: 'Poppins', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
         
         body {
@@ -31,7 +32,7 @@
         
         /* Header Styles */
         header {
-            background-color: var(--black);
+            background-color: rgba(13, 13, 13, 0.95);
             padding: 15px 20px;
             display: flex;
             justify-content: space-between;
@@ -40,6 +41,7 @@
             top: 0;
             z-index: 100;
             border-bottom: 1px solid var(--light-gray);
+            backdrop-filter: blur(10px);
         }
         
         .logo {
@@ -51,21 +53,23 @@
         .logo-icon {
             width: 32px;
             height: 32px;
-            background-color: var(--red);
+            background: linear-gradient(135deg, var(--red), var(--dark-red));
             border-radius: 50%;
             display: flex;
             justify-content: center;
             align-items: center;
             font-weight: bold;
             font-size: 18px;
+            box-shadow: 0 0 10px rgba(229, 9, 20, 0.5);
         }
         
         .logo-text {
-            font-size: 20px;
-            font-weight: bold;
-            background: linear-gradient(45deg, var(--red), #ff6b6b);
+            font-size: 22px;
+            font-weight: 800;
+            background: linear-gradient(45deg, var(--red), var(--gold));
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
+            letter-spacing: 0.5px;
         }
         
         .search-container {
@@ -79,10 +83,17 @@
             width: 100%;
             padding: 12px 45px 12px 15px;
             border-radius: 25px;
-            border: none;
+            border: 2px solid var(--light-gray);
             background-color: var(--gray);
             color: var(--white);
             outline: none;
+            transition: all 0.3s ease;
+            font-size: 14px;
+        }
+        
+        .search-input:focus {
+            border-color: var(--red);
+            box-shadow: 0 0 10px rgba(229, 9, 20, 0.3);
         }
         
         .search-button {
@@ -97,6 +108,12 @@
             border-radius: 50%;
             color: white;
             cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .search-button:hover {
+            background: var(--dark-red);
+            transform: translateY(-50%) scale(1.05);
         }
         
         .search-input::placeholder {
@@ -104,42 +121,49 @@
         }
         
         .vip-button {
-            background-color: var(--red);
+            background: linear-gradient(135deg, var(--red), var(--dark-red));
             color: var(--white);
             border: none;
-            padding: 10px 15px;
+            padding: 10px 20px;
             border-radius: 25px;
             font-weight: bold;
             cursor: pointer;
-            box-shadow: 0 0 10px rgba(229, 9, 20, 0.5);
+            box-shadow: 0 0 15px rgba(229, 9, 20, 0.4);
             transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
         
         .vip-button:hover {
-            box-shadow: 0 0 15px rgba(229, 9, 20, 0.8);
+            box-shadow: 0 0 20px rgba(229, 9, 20, 0.7);
             transform: scale(1.05);
         }
         
         /* Main Content */
         main {
             padding: 20px;
-            padding-bottom: 70px; /* Space for bottom nav */
+            padding-bottom: 70px;
         }
         
         .section-title {
-            margin: 20px 0 15px;
+            margin: 25px 0 15px;
             font-size: 22px;
-            font-weight: bold;
+            font-weight: 700;
             display: flex;
             align-items: center;
             gap: 10px;
         }
         
+        .section-title i {
+            color: var(--red);
+        }
+        
         .section-title::after {
             content: "";
             flex: 1;
-            height: 1px;
-            background-color: var(--light-gray);
+            height: 2px;
+            background: linear-gradient(90deg, var(--red), transparent);
             margin-left: 10px;
         }
         
@@ -147,42 +171,49 @@
         .carousel {
             display: flex;
             overflow-x: auto;
-            gap: 15px;
-            padding: 10px 0;
-            scrollbar-width: none; /* Firefox */
-            -ms-overflow-style: none; /* IE and Edge */
+            gap: 20px;
+            padding: 15px 5px;
+            scrollbar-width: none;
+            -ms-overflow-style: none;
         }
         
         .carousel::-webkit-scrollbar {
-            display: none; /* Chrome, Safari, Opera */
+            display: none;
         }
         
         .card {
-            min-width: 150px;
-            background-color: var(--gray);
-            border-radius: 10px;
+            min-width: 170px;
+            background: linear-gradient(180deg, var(--gray), var(--black));
+            border-radius: 12px;
             overflow: hidden;
-            transition: transform 0.3s ease;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            transition: all 0.3s ease;
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--light-gray);
         }
         
         .card:hover {
-            transform: translateY(-5px);
+            transform: translateY(-8px);
+            box-shadow: 0 12px 20px rgba(0, 0, 0, 0.4);
         }
         
         .card-img {
             width: 100%;
-            height: 200px;
+            height: 220px;
             object-fit: cover;
+            transition: transform 0.3s ease;
+        }
+        
+        .card:hover .card-img {
+            transform: scale(1.05);
         }
         
         .card-content {
-            padding: 10px;
+            padding: 12px;
         }
         
         .card-title {
-            font-size: 14px;
-            font-weight: bold;
+            font-size: 15px;
+            font-weight: 600;
             margin-bottom: 5px;
             white-space: nowrap;
             overflow: hidden;
@@ -190,7 +221,7 @@
         }
         
         .card-subtitle {
-            font-size: 12px;
+            font-size: 13px;
             color: #aaa;
             margin-bottom: 10px;
         }
@@ -201,16 +232,22 @@
         }
         
         .card-button {
-            background-color: var(--red);
+            background: linear-gradient(135deg, var(--red), var(--dark-red));
             color: var(--white);
             border: none;
-            padding: 5px 10px;
-            border-radius: 5px;
+            padding: 6px 12px;
+            border-radius: 6px;
             font-size: 12px;
             cursor: pointer;
             display: flex;
             align-items: center;
             gap: 5px;
+            transition: all 0.3s ease;
+        }
+        
+        .card-button:hover {
+            opacity: 0.9;
+            transform: scale(1.05);
         }
         
         /* Grid Styles for Tablet */
@@ -218,7 +255,7 @@
             .grid {
                 display: grid;
                 grid-template-columns: repeat(2, 1fr);
-                gap: 20px;
+                gap: 25px;
             }
             
             .card {
@@ -228,21 +265,26 @@
         
         /* VIP Section */
         .vip-section {
-            background: linear-gradient(45deg, #8B0000, var(--red));
-            padding: 20px;
-            border-radius: 10px;
-            margin: 30px 0;
+            background: linear-gradient(135deg, var(--dark-red), var(--red));
+            padding: 25px;
+            border-radius: 12px;
+            margin: 40px 0;
             text-align: center;
+            box-shadow: 0 10px 20px rgba(139, 0, 0, 0.3);
         }
         
         .vip-title {
-            font-size: 24px;
+            font-size: 26px;
             margin-bottom: 10px;
+            font-weight: 700;
         }
         
         .vip-text {
             margin-bottom: 20px;
             opacity: 0.9;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
         }
         
         /* Bottom Navigation */
@@ -251,12 +293,13 @@
             bottom: 0;
             left: 0;
             right: 0;
-            background-color: var(--black);
+            background-color: rgba(13, 13, 13, 0.95);
             display: flex;
             justify-content: space-around;
-            padding: 10px 0;
+            padding: 12px 0;
             border-top: 1px solid var(--light-gray);
             z-index: 100;
+            backdrop-filter: blur(10px);
         }
         
         .nav-item {
@@ -266,15 +309,20 @@
             text-decoration: none;
             color: #aaa;
             font-size: 12px;
+            transition: all 0.3s ease;
         }
         
         .nav-item.active {
             color: var(--red);
         }
         
+        .nav-item:hover {
+            color: var(--white);
+        }
+        
         .nav-icon {
             font-size: 20px;
-            margin-bottom: 5px;
+            margin-bottom: 4px;
         }
         
         /* AI Chat Icon */
@@ -282,16 +330,22 @@
             position: fixed;
             bottom: 80px;
             right: 20px;
-            width: 50px;
-            height: 50px;
-            background-color: var(--red);
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, var(--red), var(--dark-red));
             border-radius: 50%;
             display: flex;
             justify-content: center;
             align-items: center;
             cursor: pointer;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.4);
             z-index: 99;
+            transition: all 0.3s ease;
+        }
+        
+        .ai-chat-icon:hover {
+            transform: scale(1.1);
+            box-shadow: 0 8px 20px rgba(229, 9, 20, 0.5);
         }
         
         /* Modal Styles */
@@ -302,20 +356,22 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background-color: rgba(0, 0, 0, 0.8);
+            background-color: rgba(0, 0, 0, 0.9);
             z-index: 1000;
             justify-content: center;
             align-items: center;
         }
         
         .modal-content {
-            background-color: var(--gray);
-            padding: 20px;
-            border-radius: 10px;
+            background: linear-gradient(135deg, var(--gray), var(--black));
+            padding: 25px;
+            border-radius: 15px;
             width: 90%;
             max-width: 500px;
             max-height: 80vh;
             overflow-y: auto;
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.5);
+            border: 1px solid var(--light-gray);
         }
         
         .modal-header {
@@ -323,6 +379,8 @@
             justify-content: space-between;
             align-items: center;
             margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid var(--light-gray);
         }
         
         .close-modal {
@@ -331,6 +389,11 @@
             color: var(--white);
             font-size: 24px;
             cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .close-modal:hover {
+            color: var(--red);
         }
         
         /* Player Modal */
@@ -342,6 +405,7 @@
         .video-player {
             width: 100%;
             border-radius: 8px;
+            background: var(--black);
         }
         
         /* Download Progress */
@@ -350,22 +414,23 @@
             height: 20px;
             background-color: var(--light-gray);
             border-radius: 10px;
-            margin-top: 10px;
+            margin-top: 15px;
             overflow: hidden;
             display: none;
         }
         
         .progress-bar {
             height: 100%;
-            background: linear-gradient(90deg, var(--red), #ff6b6b);
+            background: linear-gradient(90deg, var(--red), var(--dark-red));
             width: 0%;
             transition: width 0.3s ease;
+            border-radius: 10px;
         }
         
         /* Footer */
         footer {
             background-color: var(--black);
-            padding: 20px;
+            padding: 25px 20px;
             text-align: center;
             border-top: 1px solid var(--light-gray);
         }
@@ -373,17 +438,19 @@
         .footer-links {
             display: flex;
             justify-content: center;
-            gap: 20px;
-            margin-bottom: 10px;
+            gap: 25px;
+            margin-bottom: 15px;
         }
         
         .footer-link {
             color: #aaa;
             text-decoration: none;
+            transition: all 0.3s ease;
+            font-size: 14px;
         }
         
         .footer-link:hover {
-            color: var(--white);
+            color: var(--red);
         }
         
         .copyright {
@@ -413,13 +480,14 @@
             bottom: 100px;
             left: 50%;
             transform: translateX(-50%);
-            background-color: var(--red);
+            background: linear-gradient(135deg, var(--red), var(--dark-red));
             color: white;
-            padding: 10px 20px;
+            padding: 12px 25px;
             border-radius: 25px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.3);
             z-index: 1000;
             display: none;
+            font-weight: 500;
         }
         
         /* Trending Badge */
@@ -427,9 +495,9 @@
             position: absolute;
             top: 10px;
             left: 10px;
-            background-color: var(--red);
+            background: linear-gradient(135deg, var(--red), var(--dark-red));
             color: white;
-            padding: 3px 8px;
+            padding: 4px 10px;
             border-radius: 4px;
             font-size: 12px;
             font-weight: bold;
@@ -437,18 +505,85 @@
         
         .card-img-container {
             position: relative;
+            overflow: hidden;
         }
         
         /* African Pattern Decoration */
         .african-pattern {
-            background: linear-gradient(135deg, var(--black) 25%, transparent 25%) -50px 0,
-                        linear-gradient(225deg, var(--black) 25%, transparent 25%) -50px 0,
-                        linear-gradient(315deg, var(--red) 25%, transparent 25%),
-                        linear-gradient(45deg, var(--red) 25%, transparent 25%);
-            background-size: 10px 10px;
-            height: 5px;
+            height: 8px;
             width: 100%;
+            margin-bottom: 20px;
+            background: 
+                repeating-linear-gradient(45deg, var(--red), var(--red) 10px, var(--dark-red) 10px, var(--dark-red) 20px);
+        }
+        
+        /* AI Chat Messages */
+        .chat-container {
+            max-height: 300px;
+            overflow-y: auto;
             margin-bottom: 15px;
+            padding: 10px;
+            background: var(--light-gray);
+            border-radius: 10px;
+        }
+        
+        .message {
+            padding: 10px 15px;
+            border-radius: 18px;
+            margin-bottom: 10px;
+            max-width: 80%;
+            word-wrap: break-word;
+        }
+        
+        .ai-message {
+            background: var(--red);
+            color: white;
+            border-bottom-left-radius: 5px;
+            align-self: flex-start;
+        }
+        
+        .user-message {
+            background: var(--light-gray);
+            color: white;
+            border-bottom-right-radius: 5px;
+            align-self: flex-end;
+            margin-left: auto;
+        }
+        
+        .message-container {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        
+        /* Search Results */
+        .search-results {
+            display: none;
+            margin-top: 20px;
+        }
+        
+        .results-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 20px;
+            margin-top: 15px;
+        }
+        
+        /* No Results Message */
+        .no-results {
+            text-align: center;
+            padding: 30px;
+            color: #aaa;
+        }
+        
+        /* Content Placeholder */
+        .content-placeholder {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 220px;
+            background: var(--light-gray);
+            color: #aaa;
         }
     </style>
 </head>
@@ -464,40 +599,61 @@
                 <i class="fas fa-search"></i>
             </button>
         </div>
-        <button class="vip-button">VIP</button>
+        <button class="vip-button">
+            <i class="fas fa-crown"></i> VIP
+        </button>
     </header>
     
     <div class="african-pattern"></div>
     
     <main>
-        <div class="section-title">Trending Movies</div>
+        <div class="section-title">
+            <i class="fas fa-film"></i> Trending Movies
+        </div>
         <div class="carousel" id="moviesCarousel">
             <!-- Movie cards will be loaded here -->
             <div class="spinner" id="moviesSpinner"></div>
         </div>
         
-        <div class="section-title">Popular Music</div>
+        <div class="section-title">
+            <i class="fas fa-music"></i> Popular Music
+        </div>
         <div class="carousel" id="musicCarousel">
             <!-- Music cards will be loaded here -->
             <div class="spinner" id="musicSpinner"></div>
         </div>
         
-        <div class="section-title">YouTube Videos</div>
+        <div class="section-title">
+            <i class="fab fa-youtube"></i> YouTube Videos
+        </div>
         <div class="carousel" id="youtubeCarousel">
             <!-- YouTube cards will be loaded here -->
             <div class="spinner" id="youtubeSpinner"></div>
         </div>
         
-        <div class="section-title">TikTok Videos</div>
+        <div class="section-title">
+            <i class="fab fa-tiktok"></i> TikTok Videos
+        </div>
         <div class="carousel" id="tiktokCarousel">
             <!-- TikTok cards will be loaded here -->
             <div class="spinner" id="tiktokSpinner"></div>
         </div>
         
+        <div class="search-results" id="searchResults">
+            <div class="section-title">
+                <i class="fas fa-search"></i> Search Results
+            </div>
+            <div class="results-grid" id="resultsGrid">
+                <!-- Search results will appear here -->
+            </div>
+        </div>
+        
         <div class="vip-section">
             <h2 class="vip-title">Go Ad-Free + Unlock Exclusive Movies & Music</h2>
-            <p class="vip-text">Upgrade to VIP for an enhanced experience with no interruptions</p>
-            <button class="vip-button">Upgrade Now</button>
+            <p class="vip-text">Upgrade to VIP for an enhanced experience with no interruptions and access to premium content only available on BeraStream</p>
+            <button class="vip-button">
+                <i class="fas fa-crown"></i> Upgrade Now
+            </button>
         </div>
     </main>
     
@@ -537,8 +693,9 @@
             <a href="#" class="footer-link">About</a>
             <a href="#" class="footer-link">Contact</a>
             <a href="#" class="footer-link">Privacy</a>
+            <a href="#" class="footer-link">Terms</a>
         </div>
-        <div class="copyright">© 2025 BeraStream</div>
+        <div class="copyright">© 2025 BeraStream. All rights reserved.</div>
     </footer>
     
     <!-- Player Modal -->
@@ -580,12 +737,18 @@
                 <h3>AI Assistant</h3>
                 <button class="close-modal">&times;</button>
             </div>
-            <div id="aiChatContent">
-                <p>Hello! I'm your BeraStream AI assistant. How can I help you today?</p>
-                <div style="margin-top: 15px;">
-                    <input type="text" placeholder="Ask me anything..." style="width: 100%; padding: 10px; border-radius: 5px; border: none; background: var(--light-gray); color: white;">
-                    <button style="background: var(--red); color: white; border: none; padding: 10px 15px; border-radius: 5px; margin-top: 10px; width: 100%;">Send</button>
+            <div class="chat-container">
+                <div class="message-container" id="chatMessages">
+                    <div class="message ai-message">
+                        Hello! I'm your BeraStream AI assistant. How can I help you today?
+                    </div>
                 </div>
+            </div>
+            <div>
+                <input type="text" id="aiInput" placeholder="Ask me anything..." style="width: 100%; padding: 12px; border-radius: 25px; border: 2px solid var(--light-gray); background: var(--gray); color: white; outline: none;">
+                <button id="aiSend" style="background: linear-gradient(135deg, var(--red), var(--dark-red)); color: white; border: none; padding: 12px 20px; border-radius: 25px; margin-top: 15px; width: 100%; cursor: pointer;">
+                    Send Message
+                </button>
             </div>
         </div>
     </div>
@@ -725,6 +888,17 @@
                 }
             ]
         };
+
+        // AI Responses
+        const aiResponses = [
+            "I recommend checking out the latest African movies section for great content!",
+            "Based on your interests, I think you'll enjoy the new music releases.",
+            "I can help you find similar content. What specifically are you looking for?",
+            "Many users are enjoying the trending videos section right now.",
+            "You might want to upgrade to VIP for access to exclusive content!",
+            "I'd be happy to help you navigate BeraStream. What do you need?",
+            "Let me suggest some popular content based on your preferences."
+        ];
         
         // Function to generate card HTML
         function generateCard(item, type, index) {
@@ -862,6 +1036,109 @@
             playerModal.style.display = 'flex';
         }
         
+        // Function to perform search
+        function performSearch() {
+            const query = document.getElementById('searchInput').value.trim();
+            if (!query) return;
+            
+            const searchResults = document.getElementById('searchResults');
+            const resultsGrid = document.getElementById('resultsGrid');
+            const moviesSection = document.getElementById('moviesCarousel');
+            const musicSection = document.getElementById('musicCarousel');
+            const youtubeSection = document.getElementById('youtubeCarousel');
+            const tiktokSection = document.getElementById('tiktokCarousel');
+            
+            // Hide all content sections
+            moviesSection.style.display = 'none';
+            musicSection.style.display = 'none';
+            youtubeSection.style.display = 'none';
+            tiktokSection.style.display = 'none';
+            
+            // Show search results
+            searchResults.style.display = 'block';
+            resultsGrid.innerHTML = '';
+            
+            // Show loading
+            resultsGrid.innerHTML = '<div class="spinner"></div>';
+            
+            // Simulate API search delay
+            setTimeout(() => {
+                // Clear loading
+                resultsGrid.innerHTML = '';
+                
+                // Combine all data for searching
+                const allData = [
+                    ...sampleData.movies.map(item => ({...item, type: 'movie'})),
+                    ...sampleData.music.map(item => ({...item, type: 'music'})),
+                    ...sampleData.youtube.map(item => ({...item, type: 'youtube'})),
+                    ...sampleData.tiktok.map(item => ({...item, type: 'tiktok'}))
+                ];
+                
+                // Filter based on search query
+                const filteredResults = allData.filter(item => 
+                    item.title.toLowerCase().includes(query.toLowerCase()) ||
+                    (item.artist && item.artist.toLowerCase().includes(query.toLowerCase()))
+                );
+                
+                if (filteredResults.length === 0) {
+                    resultsGrid.innerHTML = `
+                        <div class="no-results">
+                            <i class="fas fa-search" style="font-size: 48px; margin-bottom: 15px;"></i>
+                            <h3>No results found for "${query}"</h3>
+                            <p>Try different keywords or browse our categories</p>
+                        </div>
+                    `;
+                } else {
+                    filteredResults.forEach((item, index) => {
+                        resultsGrid.innerHTML += generateCard(item, item.type, index);
+                    });
+                    
+                    // Reattach event listeners to new cards
+                    attachEventListeners();
+                }
+            }, 1000);
+            
+            showToast(`Searching for "${query}"...`);
+        }
+        
+        // Function to handle AI chat
+        function handleAIChat() {
+            const input = document.getElementById('aiInput');
+            const message = input.value.trim();
+            
+            if (!message) return;
+            
+            const chatMessages = document.getElementById('chatMessages');
+            
+            // Add user message
+            chatMessages.innerHTML += `
+                <div class="message user-message">
+                    ${message}
+                </div>
+            `;
+            
+            // Clear input
+            input.value = '';
+            
+            // Scroll to bottom
+            const chatContainer = document.querySelector('.chat-container');
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+            
+            // Simulate AI thinking
+            setTimeout(() => {
+                // Add AI response
+                const randomResponse = aiResponses[Math.floor(Math.random() * aiResponses.length)];
+                chatMessages.innerHTML += `
+                    <div class="message ai-message">
+                        ${randomResponse}
+                    </div>
+                `;
+                
+                // Scroll to bottom again
+                chatContainer.scrollTop = chatContainer.scrollHeight;
+            }, 1000);
+        }
+        
         // Function to attach event listeners
         function attachEventListeners() {
             // Play buttons
@@ -892,19 +1169,21 @@
             const searchInput = document.getElementById('searchInput');
             const searchBtn = document.getElementById('searchBtn');
             
-            const performSearch = () => {
-                const query = searchInput.value.trim();
-                if (query) {
-                    showToast(`Searching for: ${query}`);
-                    // In a real app, this would call the search API
-                    searchInput.value = '';
-                }
-            };
-            
             searchBtn.addEventListener('click', performSearch);
             searchInput.addEventListener('keyup', function(event) {
                 if (event.key === 'Enter') {
                     performSearch();
+                }
+            });
+            
+            // AI Send button
+            const aiSend = document.getElementById('aiSend');
+            const aiInput = document.getElementById('aiInput');
+            
+            aiSend.addEventListener('click', handleAIChat);
+            aiInput.addEventListener('keyup', function(event) {
+                if (event.key === 'Enter') {
+                    handleAIChat();
                 }
             });
             
@@ -951,6 +1230,7 @@
             
             aiChatIcon.addEventListener('click', function() {
                 aiChatModal.style.display = 'flex';
+                document.getElementById('aiInput').focus();
             });
         }
         
