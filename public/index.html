@@ -585,6 +585,33 @@
             background: var(--light-gray);
             color: #aaa;
         }
+
+        /* Link Input for TikTok */
+        .link-input {
+            width: 100%;
+            padding: 12px;
+            border-radius: 8px;
+            border: 2px solid var(--light-gray);
+            background: var(--gray);
+            color: white;
+            margin: 10px 0;
+            outline: none;
+        }
+
+        .link-input:focus {
+            border-color: var(--red);
+        }
+
+        .submit-button {
+            background: linear-gradient(135deg, var(--red), var(--dark-red));
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            width: 100%;
+            font-weight: bold;
+        }
     </style>
 </head>
 <body>
@@ -611,7 +638,6 @@
             <i class="fas fa-film"></i> Trending Movies
         </div>
         <div class="carousel" id="moviesCarousel">
-            <!-- Movie cards will be loaded here -->
             <div class="spinner" id="moviesSpinner"></div>
         </div>
         
@@ -619,7 +645,6 @@
             <i class="fas fa-music"></i> Popular Music
         </div>
         <div class="carousel" id="musicCarousel">
-            <!-- Music cards will be loaded here -->
             <div class="spinner" id="musicSpinner"></div>
         </div>
         
@@ -627,7 +652,6 @@
             <i class="fab fa-youtube"></i> YouTube Videos
         </div>
         <div class="carousel" id="youtubeCarousel">
-            <!-- YouTube cards will be loaded here -->
             <div class="spinner" id="youtubeSpinner"></div>
         </div>
         
@@ -635,8 +659,14 @@
             <i class="fab fa-tiktok"></i> TikTok Videos
         </div>
         <div class="carousel" id="tiktokCarousel">
-            <!-- TikTok cards will be loaded here -->
-            <div class="spinner" id="tiktokSpinner"></div>
+            <div class="content-placeholder">
+                <div style="text-align: center;">
+                    <i class="fas fa-link" style="font-size: 40px; margin-bottom: 10px;"></i>
+                    <p>Paste a TikTok URL to load content</p>
+                    <input type="text" class="link-input" id="tiktokUrl" placeholder="https://www.tiktok.com/...">
+                    <button class="submit-button" id="loadTiktok">Load TikTok Video</button>
+                </div>
+            </div>
         </div>
         
         <div class="search-results" id="searchResults">
@@ -757,7 +787,24 @@
     <div class="toast" id="toast"></div>
     
     <script>
-        // Sample data with YouTube-style thumbnails
+        // API endpoints
+        const API_ENDPOINTS = {
+            moviesSearch: 'https://apis.davidcyriltech.my.id/movies/search?query=',
+            zoomMovie: 'https://apis.davidcyriltech.my.id/zoom/movie?url=',
+            youtubeMp3: 'https://apis.davidcyriltech.my.id/youtube/mp3?url=',
+            spotifySearch: 'https://apis.davidcyriltech.my.id/search/spotify?text=',
+            youtubeSearch: 'https://apis.davidcyriltech.my.id/youtube/search?query=',
+            youtubeMp4: 'https://apis.davidcyriltech.my.id/youtube/mp4?url=',
+            ytmp4: 'https://apis.davidcyriltech.my.id/download/ytmp4?url=',
+            tiktokV3: 'https://apis.davidcyriltech.my.id/download/tiktokv3?url=',
+            tiktokV2: 'https://api.giftedtech.co.ke/api/download/tiktokdlv2?apikey=gifted&url=',
+            tiktok: 'https://api.giftedtech.co.ke/api/download/tiktok?apikey=gifted&url=',
+            aiDeepseek: 'https://apis.davidcyriltech.my.id/ai/deepseek-v3?text=',
+            aiVision: 'https://api.giftedtech.co.ke/api/ai/vision?apikey=gifted&url=',
+            aiImage: 'https://api.giftedtech.co.ke/api/ai/sd?apikey=gifted&prompt='
+        };
+
+        // Sample data for demonstration when APIs don't respond
         const sampleData = {
             movies: [
                 { 
@@ -771,24 +818,6 @@
                     year: "2022", 
                     image: "https://i.ytimg.com/vi/4gX1vloTUUs/maxresdefault.jpg",
                     video: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4"
-                },
-                { 
-                    title: "Nairobi Nights", 
-                    year: "2024", 
-                    image: "https://i.ytimg.com/vi/4azyeOQZ42E/maxresdefault.jpg",
-                    video: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4"
-                },
-                { 
-                    title: "Desert Warriors", 
-                    year: "2023", 
-                    image: "https://i.ytimg.com/vi/4azyeOQZ42E/maxresdefault.jpg",
-                    video: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4"
-                },
-                { 
-                    title: "Jungle Quest", 
-                    year: "2022", 
-                    image: "https://i.ytimg.com/vi/4gX1vloTUUs/maxresdefault.jpg",
-                    video: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerFun.mp4"
                 }
             ],
             music: [
@@ -803,24 +832,6 @@
                     artist: "Focalistic, Kabza De Small", 
                     image: "https://i.ytimg.com/vi/7z1h_emRKvc/maxresdefault.jpg",
                     audio: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3"
-                },
-                { 
-                    title: "Gospel Worship", 
-                    artist: "Mercy Chinwo, Nathaniel Bassey", 
-                    image: "https://i.ytimg.com/vi/4gX1vloTUUs/maxresdefault.jpg",
-                    audio: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3"
-                },
-                { 
-                    title: "HipHop Classics", 
-                    artist: "Sarkodie, M.I Abaga", 
-                    image: "https://i.ytimg.com/vi/4azyeOQZ42E/maxresdefault.jpg",
-                    audio: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3"
-                },
-                { 
-                    title: "Reggae Vibes", 
-                    artist: "Shatta Wale, Stonebwoy", 
-                    image: "https://i.ytimg.com/vi/Ee6QnkPzVqg/maxresdefault.jpg",
-                    audio: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-5.mp3"
                 }
             ],
             youtube: [
@@ -833,56 +844,6 @@
                 { 
                     title: "Cooking Nigerian Jollof", 
                     views: "2.4M", 
-                    image: "https://i.ytimg.com/vi/4gX1vloTUUs/maxresdefault.jpg",
-                    video: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerMeltdowns.mp4"
-                },
-                { 
-                    title: "Nairobi City Life", 
-                    views: "3.7M", 
-                    image: "https://i.ytimg.com/vi/4azyeOQZ42E/maxresdefault.jpg",
-                    video: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/Sintel.mp4"
-                },
-                { 
-                    title: "African Wildlife Documentary", 
-                    views: "5.1M", 
-                    image: "https://i.ytimg.com/vi/Ee6QnkPzVqg/maxresdefault.jpg",
-                    video: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/SubaruOutbackOnStreetAndDirt.mp4"
-                },
-                { 
-                    title: "South African Road Trip", 
-                    views: "890K", 
-                    image: "https://i.ytimg.com/vi/7z1h_emRKvc/maxresdefault.jpg",
-                    video: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/TearsOfSteel.mp4"
-                }
-            ],
-            tiktok: [
-                { 
-                    title: "Trending Dance #1", 
-                    likes: "200K", 
-                    image: "https://i.ytimg.com/vi/4gX1vloTUUs/maxresdefault.jpg",
-                    video: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4"
-                },
-                { 
-                    title: "Funny African Skit", 
-                    likes: "350K", 
-                    image: "https://i.ytimg.com/vi/4azyeOQZ42E/maxresdefault.jpg",
-                    video: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4"
-                },
-                { 
-                    title: "Cooking Challenge", 
-                    likes: "150K", 
-                    image: "https://i.ytimg.com/vi/Ee6QnkPzVqg/maxresdefault.jpg",
-                    video: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerFun.mp4"
-                },
-                { 
-                    title: "Travel Vlog: Ghana", 
-                    likes: "420K", 
-                    image: "https://i.ytimg.com/vi/7z1h_emRKvc/maxresdefault.jpg",
-                    video: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyrides.mp4"
-                },
-                { 
-                    title: "Life Hacks Africa", 
-                    likes: "280K", 
                     image: "https://i.ytimg.com/vi/4gX1vloTUUs/maxresdefault.jpg",
                     video: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerMeltdowns.mp4"
                 }
@@ -928,37 +889,84 @@
             `;
         }
         
-        // Function to load sample data
-        function loadSampleData() {
-            const moviesCarousel = document.getElementById('moviesCarousel');
-            const musicCarousel = document.getElementById('musicCarousel');
-            const youtubeCarousel = document.getElementById('youtubeCarousel');
-            const tiktokCarousel = document.getElementById('tiktokCarousel');
+        // Function to fetch data from API with fallback
+        async function fetchData(url, fallbackData) {
+            try {
+                showToast('Fetching data from API...');
+                const response = await fetch(url);
+                if (!response.ok) throw new Error('API not responding');
+                const data = await response.json();
+                return data;
+            } catch (error) {
+                console.error('API Error:', error);
+                showToast('Using sample data (API unavailable)');
+                return fallbackData;
+            }
+        }
+        
+        // Function to load content from APIs
+        async function loadContent() {
+            // Load movies
+            try {
+                const moviesData = await fetchData(`${API_ENDPOINTS.moviesSearch}action`, sampleData.movies);
+                displayContent(moviesData, 'moviesCarousel', 'movie');
+            } catch (error) {
+                displayContent(sampleData.movies, 'moviesCarousel', 'movie');
+            }
             
-            // Hide spinners
-            document.getElementById('moviesSpinner').style.display = 'none';
-            document.getElementById('musicSpinner').style.display = 'none';
-            document.getElementById('youtubeSpinner').style.display = 'none';
-            document.getElementById('tiktokSpinner').style.display = 'none';
+            // Load music
+            try {
+                const musicData = await fetchData(`${API_ENDPOINTS.spotifySearch}afrobeats`, sampleData.music);
+                displayContent(musicData, 'musicCarousel', 'music');
+            } catch (error) {
+                displayContent(sampleData.music, 'musicCarousel', 'music');
+            }
             
-            // Populate with sample data
-            sampleData.movies.forEach((movie, index) => {
-                moviesCarousel.innerHTML += generateCard(movie, 'movie', index);
+            // Load YouTube videos
+            try {
+                const youtubeData = await fetchData(`${API_ENDPOINTS.youtubeSearch}africa`, sampleData.youtube);
+                displayContent(youtubeData, 'youtubeCarousel', 'youtube');
+            } catch (error) {
+                displayContent(sampleData.youtube, 'youtubeCarousel', 'youtube');
+            }
+        }
+        
+        // Function to display content
+        function displayContent(data, containerId, type) {
+            const container = document.getElementById(containerId);
+            const spinner = document.getElementById(containerId.replace('Carousel', 'Spinner'));
+            
+            if (spinner) spinner.style.display = 'none';
+            
+            if (!data || data.length === 0) {
+                container.innerHTML = '<div class="no-results">No content available</div>';
+                return;
+            }
+            
+            container.innerHTML = '';
+            
+            // Handle different data formats from APIs
+            let items = data;
+            if (data.items) items = data.items;
+            if (data.results) items = data.results;
+            
+            items.forEach((item, index) => {
+                // Normalize item properties for consistent display
+                const normalizedItem = {
+                    title: item.title || item.name || 'Untitled',
+                    year: item.year || item.release_date || '',
+                    artist: item.artist || item.channelTitle || '',
+                    views: item.views || item.viewCount || '',
+                    likes: item.likes || item.likeCount || '',
+                    image: item.image || item.thumbnail || item.thumb || 'https://files.catbox.moe/0bg31o.jpg',
+                    video: item.video || item.url || '',
+                    audio: item.audio || item.preview_url || ''
+                };
+                
+                container.innerHTML += generateCard(normalizedItem, type, index);
             });
             
-            sampleData.music.forEach((song, index) => {
-                musicCarousel.innerHTML += generateCard(song, 'music', index);
-            });
-            
-            sampleData.youtube.forEach((video, index) => {
-                youtubeCarousel.innerHTML += generateCard(video, 'youtube', index);
-            });
-            
-            sampleData.tiktok.forEach((video, index) => {
-                tiktokCarousel.innerHTML += generateCard(video, 'tiktok', index);
-            });
-            
-            // Add event listeners to buttons
+            // Reattach event listeners to new cards
             attachEventListeners();
         }
         
@@ -1037,7 +1045,7 @@
         }
         
         // Function to perform search
-        function performSearch() {
+        async function performSearch() {
             const query = document.getElementById('searchInput').value.trim();
             if (!query) return;
             
@@ -1061,26 +1069,23 @@
             // Show loading
             resultsGrid.innerHTML = '<div class="spinner"></div>';
             
-            // Simulate API search delay
-            setTimeout(() => {
-                // Clear loading
-                resultsGrid.innerHTML = '';
+            try {
+                // Try to search across all APIs
+                const [moviesData, musicData, youtubeData] = await Promise.allSettled([
+                    fetchData(`${API_ENDPOINTS.moviesSearch}${encodeURIComponent(query)}`, []),
+                    fetchData(`${API_ENDPOINTS.spotifySearch}${encodeURIComponent(query)}`, []),
+                    fetchData(`${API_ENDPOINTS.youtubeSearch}${encodeURIComponent(query)}`, [])
+                ]);
                 
-                // Combine all data for searching
-                const allData = [
-                    ...sampleData.movies.map(item => ({...item, type: 'movie'})),
-                    ...sampleData.music.map(item => ({...item, type: 'music'})),
-                    ...sampleData.youtube.map(item => ({...item, type: 'youtube'})),
-                    ...sampleData.tiktok.map(item => ({...item, type: 'tiktok'}))
+                // Combine results
+                const allResults = [
+                    ...(moviesData.value || []),
+                    ...(musicData.value || []),
+                    ...(youtubeData.value || [])
                 ];
                 
-                // Filter based on search query
-                const filteredResults = allData.filter(item => 
-                    item.title.toLowerCase().includes(query.toLowerCase()) ||
-                    (item.artist && item.artist.toLowerCase().includes(query.toLowerCase()))
-                );
-                
-                if (filteredResults.length === 0) {
+                // Display results
+                if (allResults.length === 0) {
                     resultsGrid.innerHTML = `
                         <div class="no-results">
                             <i class="fas fa-search" style="font-size: 48px; margin-bottom: 15px;"></i>
@@ -1089,20 +1094,27 @@
                         </div>
                     `;
                 } else {
-                    filteredResults.forEach((item, index) => {
-                        resultsGrid.innerHTML += generateCard(item, item.type, index);
+                    allResults.forEach((item, index) => {
+                        const type = item.kind || 'movie';
+                        resultsGrid.innerHTML += generateCard(item, type, index);
                     });
                     
                     // Reattach event listeners to new cards
                     attachEventListeners();
                 }
-            }, 1000);
-            
-            showToast(`Searching for "${query}"...`);
+            } catch (error) {
+                resultsGrid.innerHTML = `
+                    <div class="no-results">
+                        <i class="fas fa-exclamation-triangle" style="font-size: 48px; margin-bottom: 15px;"></i>
+                        <h3>Search temporarily unavailable</h3>
+                        <p>Please try again later</p>
+                    </div>
+                `;
+            }
         }
         
         // Function to handle AI chat
-        function handleAIChat() {
+        async function handleAIChat() {
             const input = document.getElementById('aiInput');
             const message = input.value.trim();
             
@@ -1124,19 +1136,86 @@
             const chatContainer = document.querySelector('.chat-container');
             chatContainer.scrollTop = chatContainer.scrollHeight;
             
-            // Simulate AI thinking
-            setTimeout(() => {
+            try {
+                // Try to call the AI API
+                const response = await fetch(`${API_ENDPOINTS.aiDeepseek}${encodeURIComponent(message)}`);
+                if (!response.ok) throw new Error('AI API not responding');
+                
+                const data = await response.json();
+                
                 // Add AI response
+                chatMessages.innerHTML += `
+                    <div class="message ai-message">
+                        ${data.response || data.answer || "I'm here to help!"}
+                    </div>
+                `;
+            } catch (error) {
+                // Fallback to local responses if API fails
                 const randomResponse = aiResponses[Math.floor(Math.random() * aiResponses.length)];
                 chatMessages.innerHTML += `
                     <div class="message ai-message">
                         ${randomResponse}
                     </div>
                 `;
+            }
+            
+            // Scroll to bottom again
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+        
+        // Function to handle TikTok URL
+        async function handleTikTokUrl() {
+            const url = document.getElementById('tiktokUrl').value.trim();
+            if (!url) return;
+            
+            const tiktokCarousel = document.getElementById('tiktokCarousel');
+            tiktokCarousel.innerHTML = '<div class="spinner"></div>';
+            
+            try {
+                // Try multiple TikTok APIs
+                const responses = await Promise.any([
+                    fetch(`${API_ENDPOINTS.tiktokV3}${encodeURIComponent(url)}`),
+                    fetch(`${API_ENDPOINTS.tiktokV2}${encodeURIComponent(url)}`),
+                    fetch(`${API_ENDPOINTS.tiktok}${encodeURIComponent(url)}`)
+                ]);
                 
-                // Scroll to bottom again
-                chatContainer.scrollTop = chatContainer.scrollHeight;
-            }, 1000);
+                if (!responses.ok) throw new Error('TikTok API not responding');
+                
+                const data = await responses.json();
+                
+                // Display TikTok video
+                tiktokCarousel.innerHTML = `
+                    <div class="card">
+                        <div class="card-img-container">
+                            <img src="${data.thumbnail || data.cover || 'https://files.catbox.moe/0bg31o.jpg'}" alt="TikTok Video" class="card-img">
+                        </div>
+                        <div class="card-content">
+                            <div class="card-title">TikTok Video</div>
+                            <div class="card-subtitle">${data.author || 'Unknown creator'}</div>
+                            <div class="card-actions">
+                                <button class="card-button play-btn">
+                                    <i class="fas fa-play"></i> Play
+                                </button>
+                                <button class="card-button download-btn">
+                                    <i class="fas fa-download"></i> Download
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                
+                // Reattach event listeners
+                attachEventListeners();
+                
+            } catch (error) {
+                tiktokCarousel.innerHTML = `
+                    <div class="no-results">
+                        <i class="fas fa-exclamation-triangle" style="font-size: 48px; margin-bottom: 15px;"></i>
+                        <h3>Could not load TikTok video</h3>
+                        <p>Please check the URL and try again</p>
+                    </div>
+                `;
+            }
         }
         
         // Function to attach event listeners
@@ -1187,6 +1266,10 @@
                 }
             });
             
+            // TikTok URL loader
+            const loadTiktok = document.getElementById('loadTiktok');
+            loadTiktok.addEventListener('click', handleTikTokUrl);
+            
             // Modal close buttons
             document.querySelectorAll('.close-modal').forEach(button => {
                 button.addEventListener('click', function() {
@@ -1236,7 +1319,7 @@
         
         // Initialize the app
         document.addEventListener('DOMContentLoaded', function() {
-            loadSampleData();
+            loadContent();
             
             // Close modal when clicking outside
             window.addEventListener('click', function(event) {
