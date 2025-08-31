@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BeraStream - Entertainment Platform</title>
+    <title>BeraStream - Premium Entertainment</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         :root {
             --black: #0D0D0D;
@@ -11,6 +12,7 @@
             --white: #FFFFFF;
             --gray: #1F1F1F;
             --light-gray: #3D3D3D;
+            --dark-red: #8B0000;
         }
         
         * {
@@ -24,6 +26,7 @@
             background-color: var(--black);
             color: var(--white);
             line-height: 1.6;
+            padding-bottom: 70px;
         }
         
         /* Header Styles */
@@ -74,12 +77,26 @@
         
         .search-input {
             width: 100%;
-            padding: 10px 15px;
+            padding: 12px 45px 12px 15px;
             border-radius: 25px;
             border: none;
             background-color: var(--gray);
             color: var(--white);
             outline: none;
+        }
+        
+        .search-button {
+            position: absolute;
+            right: 5px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: var(--red);
+            border: none;
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            color: white;
+            cursor: pointer;
         }
         
         .search-input::placeholder {
@@ -191,6 +208,9 @@
             border-radius: 5px;
             font-size: 12px;
             cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 5px;
         }
         
         /* Grid Styles for Tablet */
@@ -294,6 +314,8 @@
             border-radius: 10px;
             width: 90%;
             max-width: 500px;
+            max-height: 80vh;
+            overflow-y: auto;
         }
         
         .modal-header {
@@ -309,6 +331,35 @@
             color: var(--white);
             font-size: 24px;
             cursor: pointer;
+        }
+        
+        /* Player Modal */
+        .player-container {
+            width: 100%;
+            margin-top: 15px;
+        }
+        
+        .video-player {
+            width: 100%;
+            border-radius: 8px;
+        }
+        
+        /* Download Progress */
+        .download-progress {
+            width: 100%;
+            height: 20px;
+            background-color: var(--light-gray);
+            border-radius: 10px;
+            margin-top: 10px;
+            overflow: hidden;
+            display: none;
+        }
+        
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, var(--red), #ff6b6b);
+            width: 0%;
+            transition: width 0.3s ease;
         }
         
         /* Footer */
@@ -355,6 +406,50 @@
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
+        
+        /* Toast Notification */
+        .toast {
+            position: fixed;
+            bottom: 100px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: var(--red);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 25px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            z-index: 1000;
+            display: none;
+        }
+        
+        /* Trending Badge */
+        .trending-badge {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background-color: var(--red);
+            color: white;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        
+        .card-img-container {
+            position: relative;
+        }
+        
+        /* African Pattern Decoration */
+        .african-pattern {
+            background: linear-gradient(135deg, var(--black) 25%, transparent 25%) -50px 0,
+                        linear-gradient(225deg, var(--black) 25%, transparent 25%) -50px 0,
+                        linear-gradient(315deg, var(--red) 25%, transparent 25%),
+                        linear-gradient(45deg, var(--red) 25%, transparent 25%);
+            background-size: 10px 10px;
+            height: 5px;
+            width: 100%;
+            margin-bottom: 15px;
+        }
     </style>
 </head>
 <body>
@@ -365,18 +460,23 @@
         </div>
         <div class="search-container">
             <input type="text" class="search-input" placeholder="Search movies, music, videos..." id="searchInput">
+            <button class="search-button" id="searchBtn">
+                <i class="fas fa-search"></i>
+            </button>
         </div>
         <button class="vip-button">VIP</button>
     </header>
     
+    <div class="african-pattern"></div>
+    
     <main>
-        <div class="section-title">Movies</div>
+        <div class="section-title">Trending Movies</div>
         <div class="carousel" id="moviesCarousel">
             <!-- Movie cards will be loaded here -->
             <div class="spinner" id="moviesSpinner"></div>
         </div>
         
-        <div class="section-title">Music</div>
+        <div class="section-title">Popular Music</div>
         <div class="carousel" id="musicCarousel">
             <!-- Music cards will be loaded here -->
             <div class="spinner" id="musicSpinner"></div>
@@ -402,32 +502,32 @@
     </main>
     
     <div class="ai-chat-icon">
-        <span>AI</span>
+        <i class="fas fa-robot"></i>
     </div>
     
     <div class="bottom-nav">
         <a href="#" class="nav-item active">
-            <span class="nav-icon">🏠</span>
+            <i class="fas fa-home nav-icon"></i>
             <span>Home</span>
         </a>
         <a href="#" class="nav-item">
-            <span class="nav-icon">🔍</span>
+            <i class="fas fa-search nav-icon"></i>
             <span>Search</span>
         </a>
         <a href="#" class="nav-item">
-            <span class="nav-icon">🎵</span>
+            <i class="fas fa-music nav-icon"></i>
             <span>Music</span>
         </a>
         <a href="#" class="nav-item">
-            <span class="nav-icon">🎬</span>
+            <i class="fas fa-film nav-icon"></i>
             <span>Shorts</span>
         </a>
         <a href="#" class="nav-item">
-            <span class="nav-icon">👤</span>
+            <i class="fas fa-user nav-icon"></i>
             <span>Profile</span>
         </a>
         <a href="#" class="nav-item">
-            <span class="nav-icon">🤖</span>
+            <i class="fas fa-brain nav-icon"></i>
             <span>AI</span>
         </a>
     </div>
@@ -441,6 +541,38 @@
         <div class="copyright">© 2025 BeraStream</div>
     </footer>
     
+    <!-- Player Modal -->
+    <div class="modal" id="playerModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="playerTitle">Now Playing</h3>
+                <button class="close-modal">&times;</button>
+            </div>
+            <div class="player-container">
+                <video controls class="video-player" id="videoPlayer">
+                    Your browser does not support the video tag.
+                </video>
+                <audio controls id="audioPlayer" style="display: none; width: 100%; margin-top: 15px;">
+                    Your browser does not support the audio element.
+                </audio>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Download Progress Modal -->
+    <div class="modal" id="downloadModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Downloading</h3>
+                <button class="close-modal">&times;</button>
+            </div>
+            <p id="downloadText">Preparing your download...</p>
+            <div class="download-progress" id="downloadProgress">
+                <div class="progress-bar" id="progressBar"></div>
+            </div>
+        </div>
+    </div>
+    
     <!-- AI Chat Modal -->
     <div class="modal" id="aiChatModal">
         <div class="modal-content">
@@ -450,49 +582,159 @@
             </div>
             <div id="aiChatContent">
                 <p>Hello! I'm your BeraStream AI assistant. How can I help you today?</p>
-                <!-- Chat interface will be implemented here -->
+                <div style="margin-top: 15px;">
+                    <input type="text" placeholder="Ask me anything..." style="width: 100%; padding: 10px; border-radius: 5px; border: none; background: var(--light-gray); color: white;">
+                    <button style="background: var(--red); color: white; border: none; padding: 10px 15px; border-radius: 5px; margin-top: 10px; width: 100%;">Send</button>
+                </div>
             </div>
         </div>
     </div>
     
+    <!-- Toast Notification -->
+    <div class="toast" id="toast"></div>
+    
     <script>
-        // Sample data for demonstration
+        // Sample data with YouTube-style thumbnails
         const sampleData = {
             movies: [
-                { title: "Action Movie", year: "2023", image: "https://files.catbox.moe/0bg31o.jpg" },
-                { title: "Drama Series", year: "2022", image: "https://files.catbox.moe/0bg31o.jpg" },
-                { title: "African Adventure", year: "2024", image: "https://files.catbox.moe/0bg31o.jpg" },
-                { title: "Comedy Special", year: "2023", image: "https://files.catbox.moe/0bg31o.jpg" },
-                { title: "Thriller", year: "2022", image: "https://files.catbox.moe/0bg31o.jpg" }
+                { 
+                    title: "African Kingdoms", 
+                    year: "2023", 
+                    image: "https://i.ytimg.com/vi/7z1h_emRKvc/maxresdefault.jpg",
+                    video: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4"
+                },
+                { 
+                    title: "Safari Adventure", 
+                    year: "2022", 
+                    image: "https://i.ytimg.com/vi/4gX1vloTUUs/maxresdefault.jpg",
+                    video: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4"
+                },
+                { 
+                    title: "Nairobi Nights", 
+                    year: "2024", 
+                    image: "https://i.ytimg.com/vi/4azyeOQZ42E/maxresdefault.jpg",
+                    video: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4"
+                },
+                { 
+                    title: "Desert Warriors", 
+                    year: "2023", 
+                    image: "https://i.ytimg.com/vi/4azyeOQZ42E/maxresdefault.jpg",
+                    video: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4"
+                },
+                { 
+                    title: "Jungle Quest", 
+                    year: "2022", 
+                    image: "https://i.ytimg.com/vi/4gX1vloTUUs/maxresdefault.jpg",
+                    video: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerFun.mp4"
+                }
             ],
             music: [
-                { title: "Afrobeats Mix", artist: "Various Artists", image: "https://files.catbox.moe/0bg31o.jpg" },
-                { title: "Gospel Hits", artist: "Top Artists", image: "https://files.catbox.moe/0bg31o.jpg" },
-                { title: "HipHop Collection", artist: "Popular Rappers", image: "https://files.catbox.moe/0bg31o.jpg" },
-                { title: "Reggae Vibes", artist: "Jamaican Stars", image: "https://files.catbox.moe/0bg31o.jpg" },
-                { title: "Amapiano", artist: "South African", image: "https://files.catbox.moe/0bg31o.jpg" }
+                { 
+                    title: "Afrobeats Mix 2023", 
+                    artist: "Burna Boy, Wizkid, Davido", 
+                    image: "https://i.ytimg.com/vi/Ee6QnkPzVqg/maxresdefault.jpg",
+                    audio: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3"
+                },
+                { 
+                    title: "Amapiano Hits", 
+                    artist: "Focalistic, Kabza De Small", 
+                    image: "https://i.ytimg.com/vi/7z1h_emRKvc/maxresdefault.jpg",
+                    audio: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3"
+                },
+                { 
+                    title: "Gospel Worship", 
+                    artist: "Mercy Chinwo, Nathaniel Bassey", 
+                    image: "https://i.ytimg.com/vi/4gX1vloTUUs/maxresdefault.jpg",
+                    audio: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3"
+                },
+                { 
+                    title: "HipHop Classics", 
+                    artist: "Sarkodie, M.I Abaga", 
+                    image: "https://i.ytimg.com/vi/4azyeOQZ42E/maxresdefault.jpg",
+                    audio: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3"
+                },
+                { 
+                    title: "Reggae Vibes", 
+                    artist: "Shatta Wale, Stonebwoy", 
+                    image: "https://i.ytimg.com/vi/Ee6QnkPzVqg/maxresdefault.jpg",
+                    audio: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-5.mp3"
+                }
             ],
             youtube: [
-                { title: "Music Video", views: "1.2M", image: "https://files.catbox.moe/0bg31o.jpg" },
-                { title: "Tutorial", views: "500K", image: "https://files.catbox.moe/0bg31o.jpg" },
-                { title: "Comedy Skit", views: "2.4M", image: "https://files.catbox.moe/0bg31o.jpg" },
-                { title: "Documentary", views: "800K", image: "https://files.catbox.moe/0bg31o.jpg" },
-                { title: "Interview", views: "1.5M", image: "https://files.catbox.moe/0bg31o.jpg" }
+                { 
+                    title: "African Dance Tutorial", 
+                    views: "1.2M", 
+                    image: "https://i.ytimg.com/vi/7z1h_emRKvc/maxresdefault.jpg",
+                    video: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyrides.mp4"
+                },
+                { 
+                    title: "Cooking Nigerian Jollof", 
+                    views: "2.4M", 
+                    image: "https://i.ytimg.com/vi/4gX1vloTUUs/maxresdefault.jpg",
+                    video: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerMeltdowns.mp4"
+                },
+                { 
+                    title: "Nairobi City Life", 
+                    views: "3.7M", 
+                    image: "https://i.ytimg.com/vi/4azyeOQZ42E/maxresdefault.jpg",
+                    video: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/Sintel.mp4"
+                },
+                { 
+                    title: "African Wildlife Documentary", 
+                    views: "5.1M", 
+                    image: "https://i.ytimg.com/vi/Ee6QnkPzVqg/maxresdefault.jpg",
+                    video: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/SubaruOutbackOnStreetAndDirt.mp4"
+                },
+                { 
+                    title: "South African Road Trip", 
+                    views: "890K", 
+                    image: "https://i.ytimg.com/vi/7z1h_emRKvc/maxresdefault.jpg",
+                    video: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/TearsOfSteel.mp4"
+                }
             ],
             tiktok: [
-                { title: "Trending #1", likes: "200K", image: "https://files.catbox.moe/0bg31o.jpg" },
-                { title: "Dance Challenge", likes: "150K", image: "https://files.catbox.moe/0bg31o.jpg" },
-                { title: "Funny Clip", likes: "300K", image: "https://files.catbox.moe/0bg31o.jpg" },
-                { title: "Cooking Tip", likes: "100K", image: "https://files.catbox.moe/0bg31o.jpg" },
-                { title: "Life Hack", likes: "250K", image: "https://files.catbox.moe/0bg31o.jpg" }
+                { 
+                    title: "Trending Dance #1", 
+                    likes: "200K", 
+                    image: "https://i.ytimg.com/vi/4gX1vloTUUs/maxresdefault.jpg",
+                    video: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4"
+                },
+                { 
+                    title: "Funny African Skit", 
+                    likes: "350K", 
+                    image: "https://i.ytimg.com/vi/4azyeOQZ42E/maxresdefault.jpg",
+                    video: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4"
+                },
+                { 
+                    title: "Cooking Challenge", 
+                    likes: "150K", 
+                    image: "https://i.ytimg.com/vi/Ee6QnkPzVqg/maxresdefault.jpg",
+                    video: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerFun.mp4"
+                },
+                { 
+                    title: "Travel Vlog: Ghana", 
+                    likes: "420K", 
+                    image: "https://i.ytimg.com/vi/7z1h_emRKvc/maxresdefault.jpg",
+                    video: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyrides.mp4"
+                },
+                { 
+                    title: "Life Hacks Africa", 
+                    likes: "280K", 
+                    image: "https://i.ytimg.com/vi/4gX1vloTUUs/maxresdefault.jpg",
+                    video: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerMeltdowns.mp4"
+                }
             ]
         };
         
         // Function to generate card HTML
-        function generateCard(item, type) {
+        function generateCard(item, type, index) {
+            const isTrending = index < 2;
             return `
-                <div class="card">
-                    <img src="${item.image}" alt="${item.title}" class="card-img">
+                <div class="card" data-type="${type}" data-title="${item.title}" data-media="${type === 'music' ? item.audio : item.video}">
+                    <div class="card-img-container">
+                        <img src="${item.image}" alt="${item.title}" class="card-img">
+                        ${isTrending ? '<div class="trending-badge">Trending</div>' : ''}
+                    </div>
                     <div class="card-content">
                         <div class="card-title">${item.title}</div>
                         ${item.year ? `<div class="card-subtitle">${item.year}</div>` : ''}
@@ -500,8 +742,12 @@
                         ${item.views ? `<div class="card-subtitle">${item.views} views</div>` : ''}
                         ${item.likes ? `<div class="card-subtitle">${item.likes} likes</div>` : ''}
                         <div class="card-actions">
-                            <button class="card-button">Play</button>
-                            <button class="card-button">Download</button>
+                            <button class="card-button play-btn">
+                                <i class="fas fa-play"></i> Play
+                            </button>
+                            <button class="card-button download-btn">
+                                <i class="fas fa-download"></i> Download
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -522,74 +768,168 @@
             document.getElementById('tiktokSpinner').style.display = 'none';
             
             // Populate with sample data
-            sampleData.movies.forEach(movie => {
-                moviesCarousel.innerHTML += generateCard(movie, 'movie');
+            sampleData.movies.forEach((movie, index) => {
+                moviesCarousel.innerHTML += generateCard(movie, 'movie', index);
             });
             
-            sampleData.music.forEach(song => {
-                musicCarousel.innerHTML += generateCard(song, 'music');
+            sampleData.music.forEach((song, index) => {
+                musicCarousel.innerHTML += generateCard(song, 'music', index);
             });
             
-            sampleData.youtube.forEach(video => {
-                youtubeCarousel.innerHTML += generateCard(video, 'youtube');
+            sampleData.youtube.forEach((video, index) => {
+                youtubeCarousel.innerHTML += generateCard(video, 'youtube', index);
             });
             
-            sampleData.tiktok.forEach(video => {
-                tiktokCarousel.innerHTML += generateCard(video, 'tiktok');
+            sampleData.tiktok.forEach((video, index) => {
+                tiktokCarousel.innerHTML += generateCard(video, 'tiktok', index);
             });
+            
+            // Add event listeners to buttons
+            attachEventListeners();
         }
         
-        // Initialize the app
-        document.addEventListener('DOMContentLoaded', function() {
-            loadSampleData();
+        // Function to simulate download
+        function simulateDownload(filename) {
+            const downloadModal = document.getElementById('downloadModal');
+            const downloadProgress = document.getElementById('downloadProgress');
+            const progressBar = document.getElementById('progressBar');
+            const downloadText = document.getElementById('downloadText');
             
-            // AI Chat functionality
-            const aiChatIcon = document.querySelector('.ai-chat-icon');
-            const aiChatModal = document.getElementById('aiChatModal');
-            const closeModal = document.querySelector('.close-modal');
+            downloadModal.style.display = 'flex';
+            downloadProgress.style.display = 'block';
+            downloadText.textContent = `Downloading "${filename}"...`;
             
-            aiChatIcon.addEventListener('click', function() {
-                aiChatModal.style.display = 'flex';
-            });
-            
-            closeModal.addEventListener('click', function() {
-                aiChatModal.style.display = 'none';
-            });
-            
-            // Close modal when clicking outside
-            window.addEventListener('click', function(event) {
-                if (event.target === aiChatModal) {
-                    aiChatModal.style.display = 'none';
+            let progress = 0;
+            const interval = setInterval(() => {
+                progress += 5;
+                progressBar.style.width = `${progress}%`;
+                
+                if (progress >= 100) {
+                    clearInterval(interval);
+                    setTimeout(() => {
+                        downloadModal.style.display = 'none';
+                        showToast(`Download complete: ${filename}`);
+                        
+                        // Create a dummy download (in a real app, this would be the actual file)
+                        const dummyContent = "BeraStream download: " + filename;
+                        const blob = new Blob([dummyContent], { type: 'application/octet-stream' });
+                        const url = URL.createObjectURL(blob);
+                        
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = filename;
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
+                        URL.revokeObjectURL(url);
+                    }, 500);
                 }
+            }, 100);
+        }
+        
+        // Function to show toast notification
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.style.display = 'block';
+            
+            setTimeout(() => {
+                toast.style.display = 'none';
+            }, 3000);
+        }
+        
+        // Function to play media
+        function playMedia(url, title, type) {
+            const playerModal = document.getElementById('playerModal');
+            const videoPlayer = document.getElementById('videoPlayer');
+            const audioPlayer = document.getElementById('audioPlayer');
+            const playerTitle = document.getElementById('playerTitle');
+            
+            playerTitle.textContent = title;
+            
+            if (type === 'music') {
+                videoPlayer.style.display = 'none';
+                audioPlayer.style.display = 'block';
+                audioPlayer.src = url;
+                audioPlayer.play();
+            } else {
+                audioPlayer.style.display = 'none';
+                videoPlayer.style.display = 'block';
+                videoPlayer.src = url;
+                videoPlayer.play();
+            }
+            
+            playerModal.style.display = 'flex';
+        }
+        
+        // Function to attach event listeners
+        function attachEventListeners() {
+            // Play buttons
+            document.querySelectorAll('.play-btn').forEach(button => {
+                button.addEventListener('click', function() {
+                    const card = this.closest('.card');
+                    const type = card.dataset.type;
+                    const title = card.dataset.title;
+                    const mediaUrl = card.dataset.media;
+                    
+                    playMedia(mediaUrl, title, type);
+                });
+            });
+            
+            // Download buttons
+            document.querySelectorAll('.download-btn').forEach(button => {
+                button.addEventListener('click', function() {
+                    const card = this.closest('.card');
+                    const title = card.dataset.title;
+                    const type = card.dataset.type;
+                    
+                    const extension = type === 'music' ? '.mp3' : '.mp4';
+                    simulateDownload(`BeraStream_${title}${extension}`);
+                });
             });
             
             // Search functionality
             const searchInput = document.getElementById('searchInput');
+            const searchBtn = document.getElementById('searchBtn');
+            
+            const performSearch = () => {
+                const query = searchInput.value.trim();
+                if (query) {
+                    showToast(`Searching for: ${query}`);
+                    // In a real app, this would call the search API
+                    searchInput.value = '';
+                }
+            };
+            
+            searchBtn.addEventListener('click', performSearch);
             searchInput.addEventListener('keyup', function(event) {
                 if (event.key === 'Enter') {
-                    const query = searchInput.value.trim();
-                    if (query) {
-                        // In a real app, this would call the search API
-                        alert(`Searching for: ${query}`);
-                        searchInput.value = '';
-                    }
+                    performSearch();
                 }
+            });
+            
+            // Modal close buttons
+            document.querySelectorAll('.close-modal').forEach(button => {
+                button.addEventListener('click', function() {
+                    document.querySelectorAll('.modal').forEach(modal => {
+                        modal.style.display = 'none';
+                    });
+                    
+                    // Pause any playing media
+                    const videoPlayer = document.getElementById('videoPlayer');
+                    const audioPlayer = document.getElementById('audioPlayer');
+                    
+                    videoPlayer.pause();
+                    audioPlayer.pause();
+                });
             });
             
             // VIP button functionality
             const vipButtons = document.querySelectorAll('.vip-button');
             vipButtons.forEach(button => {
                 button.addEventListener('click', function() {
-                    alert('VIP features coming soon!');
+                    showToast('VIP features coming soon!');
                 });
-            });
-            
-            // Card button functionality
-            document.addEventListener('click', function(event) {
-                if (event.target.classList.contains('card-button')) {
-                    const buttonText = event.target.textContent;
-                    alert(`${buttonText} feature will be implemented soon!`);
-                }
             });
             
             // Navigation functionality
@@ -600,9 +940,36 @@
                     navItems.forEach(nav => nav.classList.remove('active'));
                     this.classList.add('active');
                     
-                    const section = this.querySelector('span:last-child').textContent;
-                    alert(`Navigating to ${section} section`);
+                    const section = this.querySelector('span').textContent;
+                    showToast(`Navigating to ${section} section`);
                 });
+            });
+            
+            // AI Chat functionality
+            const aiChatIcon = document.querySelector('.ai-chat-icon');
+            const aiChatModal = document.getElementById('aiChatModal');
+            
+            aiChatIcon.addEventListener('click', function() {
+                aiChatModal.style.display = 'flex';
+            });
+        }
+        
+        // Initialize the app
+        document.addEventListener('DOMContentLoaded', function() {
+            loadSampleData();
+            
+            // Close modal when clicking outside
+            window.addEventListener('click', function(event) {
+                if (event.target.classList.contains('modal')) {
+                    event.target.style.display = 'none';
+                    
+                    // Pause any playing media
+                    const videoPlayer = document.getElementById('videoPlayer');
+                    const audioPlayer = document.getElementById('audioPlayer');
+                    
+                    videoPlayer.pause();
+                    audioPlayer.pause();
+                }
             });
         });
     </script>
