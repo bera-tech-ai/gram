@@ -18,7 +18,8 @@ const io = socketIo(server, {
 });
 
 // MongoDB connection with better error handling and retry logic
-const MONGODB_URI = process.env.MONGO_URI || 'mongodb://mongo:27017/novachat';
+// Default changed to 127.0.0.1 instead of "mongo"
+const MONGODB_URI = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/novachat';
 
 console.log('Connecting to MongoDB at:', MONGODB_URI);
 
@@ -30,10 +31,10 @@ const connectWithRetry = () => {
     socketTimeoutMS: 45000,
   })
   .then(() => {
-    console.log('Successfully connected to MongoDB');
+    console.log('✅ Successfully connected to MongoDB');
   })
   .catch(err => {
-    console.error('Failed to connect to MongoDB:', err.message);
+    console.error('❌ Failed to connect to MongoDB:', err.message);
     console.log('Retrying connection in 5 seconds...');
     setTimeout(connectWithRetry, 5000);
   });
@@ -46,23 +47,18 @@ connectWithRetry();
 mongoose.connection.on('connected', () => {
   console.log('Mongoose connected to MongoDB');
 });
-
 mongoose.connection.on('error', (err) => {
   console.error('Mongoose connection error:', err);
 });
-
 mongoose.connection.on('disconnected', () => {
   console.log('Mongoose disconnected from MongoDB');
 });
-
-// If the Node process ends, close the Mongoose connection
 process.on('SIGINT', () => {
   mongoose.connection.close(() => {
     console.log('Mongoose connection disconnected through app termination');
     process.exit(0);
   });
 });
-
 // MongoDB Models
 const UserSchema = new mongoose.Schema({
   username: { type: String, required: true, unique: true },
