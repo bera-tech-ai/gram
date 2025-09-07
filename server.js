@@ -17,10 +17,50 @@ const io = socketIo(server, {
   }
 });
 
-// MongoDB connection
-mongoose.connect(process.env.MONGO_URI || 'mongodb://localhost:27017/novachat', {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
+// MongoDB connection with better error handling and retry logic
+const MONGODB_URI = process.env.MONGO_URI || 'mongodb://mongo:27017/novachat';
+
+console.log('Connecting to MongoDB at:', MONGODB_URI);
+
+const connectWithRetry = () => {
+  mongoose.connect(MONGODB_URI, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+    serverSelectionTimeoutMS: 5000,
+    socketTimeoutMS: 45000,
+  })
+  .then(() => {
+    console.log('Successfully connected to MongoDB');
+  })
+  .catch(err => {
+    console.error('Failed to connect to MongoDB:', err.message);
+    console.log('Retrying connection in 5 seconds...');
+    setTimeout(connectWithRetry, 5000);
+  });
+};
+
+// Initial connection attempt
+connectWithRetry();
+
+// MongoDB connection events
+mongoose.connection.on('connected', () => {
+  console.log('Mongoose connected to MongoDB');
+});
+
+mongoose.connection.on('error', (err) => {
+  console.error('Mongoose connection error:', err);
+});
+
+mongoose.connection.on('disconnected', () => {
+  console.log('Mongoose disconnected from MongoDB');
+});
+
+// If the Node process ends, close the Mongoose connection
+process.on('SIGINT', () => {
+  mongoose.connection.close(() => {
+    console.log('Mongoose connection disconnected through app termination');
+    process.exit(0);
+  });
 });
 
 // MongoDB Models
@@ -63,9 +103,14 @@ const User = mongoose.model('User', UserSchema);
 const Message = mongoose.model('Message', MessageSchema);
 
 // OpenAI setup
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY
-});
+let openai;
+if (process.env.OPENAI_API_KEY) {
+  openai = new OpenAI({
+    apiKey: process.env.OPENAI_API_KEY
+  });
+} else {
+  console.warn('OPENAI_API_KEY not set. Bera AI functionality will be limited.');
+}
 
 // Middleware
 app.use(express.json());
@@ -212,8 +257,12 @@ app.put('/api/messages/:messageId', authenticateToken, async (req, res) => {
     message.editedAt = new Date();
     await message.save();
     
+    // Populate before emitting
+    await message.populate('sender', 'name username profilePicture');
+    await message.populate('recipient', 'name username profilePicture');
+    
     // Emit the edited message to both users
-    io.to(message.sender.toString()).to(message.recipient.toString()).emit('messageEdited', message);
+    io.to(message.sender._id.toString()).to(message.recipient._id.toString()).emit('messageEdited', message);
     
     res.json(message);
   } catch (error) {
@@ -360,9 +409,7 @@ app.post('/api/admin/login', async (req, res) => {
 
 app.get('/api/admin/stats', authenticateToken, async (req, res) => {
   try {
-    // Check if user is admin (you might want to add an admin field to your user model)
-    // For simplicity, we're just checking if the request has a valid admin token
-    // In a real app, you'd have proper admin authentication
+    // In a real app, you'd verify admin privileges here
     
     const totalUsers = await User.countDocuments();
     const totalMessages = await Message.countDocuments();
@@ -429,6 +476,11 @@ app.post('/api/admin/unban-user/:userId', authenticateToken, async (req, res) =>
   }
 });
 
+// Serve the main page
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
 // Socket.IO logic
 const onlineUsers = new Map();
 
@@ -488,7 +540,7 @@ io.on('connection', (socket) => {
       }
       
       const recipient = await User.findById(recipientId);
-      if (recipient.blockedUsers.includes(socket.userId)) {
+      if (recipient && recipient.blockedUsers.includes(socket.userId)) {
         socket.emit('error', 'You are blocked by this user');
         return;
       }
@@ -521,7 +573,7 @@ io.on('connection', (socket) => {
       }
       
       // If message is to Bera AI, generate response
-      if (isAI) {
+      if (isAI && openai) {
         // Get user's Bera AI settings
         const user = await User.findById(socket.userId);
         const aiName = user.beraAISettings.name;
@@ -659,11 +711,6 @@ io.on('connection', (socket) => {
       socket.broadcast.emit('userOffline', { userId: socket.userId });
     }
   });
-});
-
-// Serve the main page
-app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
 const PORT = process.env.PORT || 3000;
