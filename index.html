@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NovaChat</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" type="image/png" href="/icon-192.png">
+</head>
+<body>
+    <div id="app">
+        <!-- Auth Screen -->
+        <div id="auth-screen" class="screen active">
+            <div class="auth-container">
+                <h1>NovaChat</h1>
+                <div class="auth-tabs">
+                    <button class="tab-btn active" data-tab="login">Login</button>
+                    <button class="tab-btn" data-tab="register">Register</button>
+                </div>
+                
+                <form id="login-form" class="auth-form active">
+                    <input type="email" id="login-email" placeholder="Email" required>
+                    <input type="password" id="login-password" placeholder="Password" required>
+                    <button type="submit">Login</button>
+                </form>
+                
+                <form id="register-form" class="auth-form">
+                    <input type="text" id="register-name" placeholder="Display Name" required>
+                    <input type="email" id="register-email" placeholder="Email" required>
+                    <input type="password" id="register-password" placeholder="Password" required>
+                    <button type="submit">Register</button>
+                </form>
+                
+                <div id="auth-error" class="error-message"></div>
+            </div>
+        </div>
+        
+        <!-- Main Chat Screen -->
+        <div id="chat-screen" class="screen">
+            <div class="chat-container">
+                <!-- Sidebar -->
+                <div class="sidebar">
+                    <div class="sidebar-header">
+                        <div class="user-profile">
+                            <img id="user-avatar" src="" alt="Profile">
+                            <span id="user-name"></span>
+                        </div>
+                        <div class="sidebar-actions">
+                            <button id="new-chat-btn" title="New Chat">+</button>
+                            <button id="settings-btn" title="Settings">⚙️</button>
+                        </div>
+                    </div>
+                    
+                    <div class="search-container">
+                        <input type="text" id="search-contacts" placeholder="Search contacts...">
+                    </div>
+                    
+                    <div class="contacts-list">
+                        <div class="ai-contact contact-item" data-id="ai">
+                            <img src="/ai-avatar.png" alt="Bera AI">
+                            <div class="contact-info">
+                                <span class="contact-name">Bera AI</span>
+                                <span class="contact-status">AI Assistant</span>
+                            </div>
+                        </div>
+                        <div id="contacts-container"></div>
+                    </div>
+                </div>
+                
+                <!-- Chat Area -->
+                <div class="chat-area">
+                    <div class="chat-header">
+                        <div id="current-chat-info" class="chat-info">
+                            <img id="chat-avatar" src="" alt="Contact">
+                            <div>
+                                <span id="chat-name"></span>
+                                <span id="chat-status"></span>
+                            </div>
+                        </div>
+                        <div class="chat-actions">
+                            <button id="video-call-btn" title="Video Call">📹</button>
+                            <button id="voice-call-btn" title="Voice Call">📞</button>
+                            <button id="chat-info-btn" title="Chat Info">ℹ️</button>
+                        </div>
+                    </div>
+                    
+                    <div class="messages-container">
+                        <div id="messages-list"></div>
+                    </div>
+                    
+                    <div class="typing-indicator" id="typing-indicator"></div>
+                    
+                    <div class="message-input-container">
+                        <button id="attach-btn">📎</button>
+                        <input type="text" id="message-input" placeholder="Type a message...">
+                        <button id="send-btn">➤</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Settings Screen -->
+        <div id="settings-screen" class="screen">
+            <div class="settings-container">
+                <div class="settings-header">
+                    <button id="back-to-chat">←</button>
+                    <h2>Settings</h2>
+                </div>
+                
+                <div class="settings-content">
+                    <div class="settings-section">
+                        <h3>Profile</h3>
+                        <div class="profile-settings">
+                            <div class="avatar-upload">
+                                <img id="settings-avatar" src="" alt="Profile">
+                                <input type="file" id="avatar-input" accept="image/*">
+                                <label for="avatar-input">Change</label>
+                            </div>
+                            <input type="text" id="profile-name" placeholder="Display Name">
+                            <input type="text" id="profile-status" placeholder="Status">
+                        </div>
+                        <button id="save-profile">Save Profile</button>
+                    </div>
+                    
+                    <div class="settings-section">
+                        <h3>Privacy</h3>
+                        <div class="privacy-settings">
+                            <label>
+                                Last Seen
+                                <select id="last-seen-setting">
+                                    <option value="everyone">Everyone</option>
+                                    <option value="contacts">My Contacts</option>
+                                    <option value="nobody">Nobody</option>
+                                </select>
+                            </label>
+                            <label>
+                                <input type="checkbox" id="read-receipts-setting">
+                                Read Receipts
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div class="settings-section">
+                        <h3>Theme</h3>
+                        <div class="theme-settings">
+                            <label>
+                                <input type="radio" name="theme" value="light" checked>
+                                Light Mode
+                            </label>
+                            <label>
+                                <input type="radio" name="theme" value="dark">
+                                Dark Mode
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div class="settings-section">
+                        <h3>Bera AI Settings</h3>
+                        <div class="ai-settings">
+                            <input type="text" id="ai-name" placeholder="AI Name" value="Bera AI">
+                            <select id="ai-personality">
+                                <option value="friendly">Friendly</option>
+                                <option value="professional">Professional</option>
+                                <option value="funny">Funny</option>
+                                <option value="mentor">Mentor</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="settings-section">
+                        <button id="admin-btn">Admin Dashboard</button>
+                        <button id="logout-btn">Logout</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Admin Login Screen -->
+        <div id="admin-login-screen" class="screen">
+            <div class="admin-login-container">
+                <h2>Admin Login</h2>
+                <input type="password" id="admin-password" placeholder="Admin Password">
+                <button id="admin-login-btn">Login</button>
+                <button id="admin-back-btn">Back</button>
+                <div id="admin-error" class="error-message"></div>
+            </div>
+        </div>
+        
+        <!-- Admin Dashboard Screen -->
+        <div id="admin-screen" class="screen">
+            <div class="admin-container">
+                <div class="admin-header">
+                    <button id="admin-back">←</button>
+                    <h2>Admin Dashboard</h2>
+                </div>
+                
+                <div class="admin-content">
+                    <div class="admin-stats">
+                        <div class="stat-card">
+                            <h3>Total Users</h3>
+                            <span id="total-users">0</span>
+                        </div>
+                        <div class="stat-card">
+                            <h3>Total Messages</h3>
+                            <span id="total-messages">0</span>
+                        </div>
+                        <div class="stat-card">
+                            <h3>Active Users</h3>
+                            <span id="active-users">0</span>
+                        </div>
+                    </div>
+                    
+                    <div class="admin-section">
+                        <h3>User Management</h3>
+                        <div class="users-list">
+                            <table id="users-table">
+                                <thead>
+                                    <tr>
+                                        <th>Name</th>
+                                        <th>Email</th>
+                                        <th>Status</th>
+                                        <th>Last Seen</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="users-table-body"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                    
+                    <div class="admin-section">
+                        <h3>Message Moderation</h3>
+                        <div id="moderation-panel">
+                            <p>Message moderation features will be implemented here.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="script.js"></script>
+</body>
+  </html>
