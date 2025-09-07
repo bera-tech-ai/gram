@@ -6,7 +6,7 @@
     <title>NovaChat</title>
     <link rel="stylesheet" href="style.css">
     <link rel="manifest" href="manifest.json">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="icon" type="image/png" href="/icon-192.png">
 </head>
 <body>
     <div id="app">
@@ -20,15 +20,14 @@
                 </div>
                 
                 <form id="login-form" class="auth-form active">
-                    <input type="text" id="login-username" placeholder="Username" required>
+                    <input type="email" id="login-email" placeholder="Email" required>
                     <input type="password" id="login-password" placeholder="Password" required>
                     <button type="submit">Login</button>
                 </form>
                 
                 <form id="register-form" class="auth-form">
-                    <input type="text" id="register-name" placeholder="Full Name" required>
-                    <input type="text" id="register-username" placeholder="Username" required>
-                    <input type="email" id="register-email" placeholder="Email (optional)">
+                    <input type="text" id="register-name" placeholder="Display Name" required>
+                    <input type="email" id="register-email" placeholder="Email" required>
                     <input type="password" id="register-password" placeholder="Password" required>
                     <button type="submit">Register</button>
                 </form>
@@ -37,23 +36,19 @@
             </div>
         </div>
         
-
-
-        
         <!-- Main Chat Screen -->
         <div id="chat-screen" class="screen">
             <div class="chat-container">
                 <!-- Sidebar -->
                 <div class="sidebar">
                     <div class="sidebar-header">
-                        <div class="user-info">
-                            <img id="user-avatar" src="" alt="Avatar">
+                        <div class="user-profile">
+                            <img id="user-avatar" src="" alt="Profile">
                             <span id="user-name"></span>
                         </div>
                         <div class="sidebar-actions">
-                            <button id="theme-toggle"><i class="fas fa-moon"></i></button>
-                            <button id="settings-btn"><i class="fas fa-cog"></i></button>
-                            <button id="logout-btn"><i class="fas fa-sign-out-alt"></i></button>
+                            <button id="new-chat-btn" title="New Chat">+</button>
+                            <button id="settings-btn" title="Settings">⚙️</button>
                         </div>
                     </div>
                     
@@ -62,207 +57,190 @@
                     </div>
                     
                     <div class="contacts-list">
-                        <!-- Bera AI contact (pinned at top) -->
-                        <div class="contact ai-contact active" data-id="bera-ai">
-                            <div class="contact-avatar">
-                                <i class="fas fa-robot"></i>
-                            </div>
+                        <div class="ai-contact contact-item" data-id="ai">
+                            <img src="/ai-avatar.png" alt="Bera AI">
                             <div class="contact-info">
-                                <div class="contact-name">Bera AI</div>
-                                <div class="contact-status">Your AI assistant</div>
+                                <span class="contact-name">Bera AI</span>
+                                <span class="contact-status">AI Assistant</span>
                             </div>
                         </div>
-                        
-                        <!-- Other contacts will be added dynamically -->
+                        <div id="contacts-container"></div>
                     </div>
                 </div>
                 
                 <!-- Chat Area -->
                 <div class="chat-area">
                     <div class="chat-header">
-                        <div class="chat-partner-info">
-                            <img id="partner-avatar" src="" alt="Avatar">
+                        <div id="current-chat-info" class="chat-info">
+                            <img id="chat-avatar" src="" alt="Contact">
                             <div>
-                                <div id="partner-name"></div>
-                                <div id="partner-status"></div>
+                                <span id="chat-name"></span>
+                                <span id="chat-status"></span>
                             </div>
                         </div>
                         <div class="chat-actions">
-                            <button id="call-btn"><i class="fas fa-phone"></i></button>
-                            <button id="video-call-btn"><i class="fas fa-video"></i></button>
-                            <button id="chat-info-btn"><i class="fas fa-info-circle"></i></button>
+                            <button id="video-call-btn" title="Video Call">📹</button>
+                            <button id="voice-call-btn" title="Voice Call">📞</button>
+                            <button id="chat-info-btn" title="Chat Info">ℹ️</button>
                         </div>
                     </div>
                     
                     <div class="messages-container">
-                        <div class="messages">
-                            <!-- Messages will be added dynamically -->
-                        </div>
-                        
-                        <div class="typing-indicator" id="typing-indicator">
-                            <span></span>
-                            <span></span>
-                            <span></span>
-                        </div>
+                        <div id="messages-list"></div>
                     </div>
                     
+                    <div class="typing-indicator" id="typing-indicator"></div>
+                    
                     <div class="message-input-container">
-                        <button id="attach-btn"><i class="fas fa-paperclip"></i></button>
+                        <button id="attach-btn">📎</button>
                         <input type="text" id="message-input" placeholder="Type a message...">
-                        <button id="send-btn"><i class="fas fa-paper-plane"></i></button>
-                    </div>
-                </div>
-                
-                <!-- Info Panel (initially hidden) -->
-                <div class="info-panel">
-                    <div class="info-header">
-                        <h3>Contact Info</h3>
-                        <button id="close-info"><i class="fas fa-times"></i></button>
-                    </div>
-                    <div class="info-content">
-                        <div class="info-avatar">
-                            <img id="info-avatar" src="" alt="Avatar">
-                        </div>
-                        <div class="info-name" id="info-name"></div>
-                        <div class="info-status" id="info-status"></div>
-                        
-                        <div class="info-actions">
-                            <button id="block-btn">Block User</button>
-                            <button id="clear-chat-btn">Clear Chat</button>
-                        </div>
+                        <button id="send-btn">➤</button>
                     </div>
                 </div>
             </div>
         </div>
         
-        <!-- Settings Modal -->
-        <div id="settings-modal" class="modal">
-            <div class="modal-content">
-                <div class="modal-header">
+        <!-- Settings Screen -->
+        <div id="settings-screen" class="screen">
+            <div class="settings-container">
+                <div class="settings-header">
+                    <button id="back-to-chat">←</button>
                     <h2>Settings</h2>
-                    <button class="close-modal">&times;</button>
                 </div>
-                <div class="modal-body">
-                    <div class="settings-tabs">
-                        <button class="settings-tab active" data-tab="profile">Profile</button>
-                        <button class="settings-tab" data-tab="privacy">Privacy</button>
-                        <button class="settings-tab" data-tab="ai">Bera AI</button>
-                        <button class="settings-tab" data-tab="admin">Admin</button>
+                
+                <div class="settings-content">
+                    <div class="settings-section">
+                        <h3>Profile</h3>
+                        <div class="profile-settings">
+                            <div class="avatar-upload">
+                                <img id="settings-avatar" src="" alt="Profile">
+                                <input type="file" id="avatar-input" accept="image/*">
+                                <label for="avatar-input">Change</label>
+                            </div>
+                            <input type="text" id="profile-name" placeholder="Display Name">
+                            <input type="text" id="profile-status" placeholder="Status">
+                        </div>
+                        <button id="save-profile">Save Profile</button>
                     </div>
                     
-                    <div class="settings-content">
-                        <!-- Profile Settings -->
-                        <div id="profile-settings" class="settings-panel active">
-                            <div class="avatar-upload">
-                                <img id="profile-avatar" src="" alt="Profile Avatar">
-                                <input type="file" id="avatar-upload" accept="image/*">
-                                <label for="avatar-upload">Change Avatar</label>
-                            </div>
-                            <div class="form-group">
-                                <label for="profile-name">Name</label>
-                                <input type="text" id="profile-name">
-                            </div>
-                            <div class="form-group">
-                                <label for="profile-status">Status</label>
-                                <input type="text" id="profile-status">
-                            </div>
-                            <button id="save-profile">Save Changes</button>
-                        </div>
-                        
-                        <!-- Privacy Settings -->
-                        <div id="privacy-settings" class="settings-panel">
-                            <div class="form-group">
-                                <label for="last-seen-privacy">Last Seen</label>
-                                <select id="last-seen-privacy">
+                    <div class="settings-section">
+                        <h3>Privacy</h3>
+                        <div class="privacy-settings">
+                            <label>
+                                Last Seen
+                                <select id="last-seen-setting">
                                     <option value="everyone">Everyone</option>
                                     <option value="contacts">My Contacts</option>
                                     <option value="nobody">Nobody</option>
                                 </select>
-                            </div>
-                            <div class="form-group">
-                                <label for="read-receipts">Read Receipts</label>
-                                <div class="toggle-switch">
-                                    <input type="checkbox" id="read-receipts" checked>
-                                    <span class="slider"></span>
-                                </div>
-                            </div>
-                            <h3>Blocked Users</h3>
-                            <div id="blocked-users-list">
-                                <!-- Blocked users will be listed here -->
-                            </div>
-                            <button id="save-privacy">Save Changes</button>
+                            </label>
+                            <label>
+                                <input type="checkbox" id="read-receipts-setting">
+                                Read Receipts
+                            </label>
                         </div>
-                        
-                        <!-- AI Settings -->
-                        <div id="ai-settings" class="settings-panel">
-                            <div class="form-group">
-                                <label for="ai-name">Bera AI Name</label>
-                                <input type="text" id="ai-name" value="Bera AI">
-                            </div>
-                            <div class="form-group">
-                                <label for="ai-personality">Personality</label>
-                                <select id="ai-personality">
-                                    <option value="friendly">Friendly</option>
-                                    <option value="professional">Professional</option>
-                                    <option value="funny">Funny</option>
-                                    <option value="mentor">Mentor</option>
-                                </select>
-                            </div>
-                            <button id="save-ai-settings">Save Changes</button>
+                    </div>
+                    
+                    <div class="settings-section">
+                        <h3>Theme</h3>
+                        <div class="theme-settings">
+                            <label>
+                                <input type="radio" name="theme" value="light" checked>
+                                Light Mode
+                            </label>
+                            <label>
+                                <input type="radio" name="theme" value="dark">
+                                Dark Mode
+                            </label>
                         </div>
-                        
-                        <!-- Admin Settings -->
-                        <div id="admin-settings" class="settings-panel">
-                            <div id="admin-login-form">
-                                <h3>Admin Login</h3>
-                                <input type="password" id="admin-password" placeholder="Admin Password">
-                                <button id="admin-login-btn">Login</button>
-                            </div>
-                            <div id="admin-dashboard" style="display: none;">
-                                <h3>Admin Dashboard</h3>
-                                <div class="admin-stats">
-                                    <div class="stat">
-                                        <span class="stat-value" id="total-users">0</span>
-                                        <span class="stat-label">Total Users</span>
-                                    </div>
-                                    <div class="stat">
-                                        <span class="stat-value" id="total-messages">0</span>
-                                        <span class="stat-label">Total Messages</span>
-                                    </div>
-                                    <div class="stat">
-                                        <span class="stat-value" id="active-users">0</span>
-                                        <span class="stat-label">Active Users</span>
-                                    </div>
-                                </div>
-                                
-                                <h4>User Management</h4>
-                                <div class="users-list">
-                                    <!-- Users will be listed here -->
-                                </div>
-                                
-                                <h4>Message Moderation</h4>
-                                <div class="moderation-panel">
-                                    <!-- Flagged messages will be listed here -->
-                                </div>
-                            </div>
+                    </div>
+                    
+                    <div class="settings-section">
+                        <h3>Bera AI Settings</h3>
+                        <div class="ai-settings">
+                            <input type="text" id="ai-name" placeholder="AI Name" value="Bera AI">
+                            <select id="ai-personality">
+                                <option value="friendly">Friendly</option>
+                                <option value="professional">Professional</option>
+                                <option value="funny">Funny</option>
+                                <option value="mentor">Mentor</option>
+                            </select>
                         </div>
+                    </div>
+                    
+                    <div class="settings-section">
+                        <button id="admin-btn">Admin Dashboard</button>
+                        <button id="logout-btn">Logout</button>
                     </div>
                 </div>
             </div>
         </div>
         
-        <!-- Message Context Menu -->
-        <div id="message-context-menu" class="context-menu">
-            <ul>
-                <li data-action="reply">Reply</li>
-                <li data-action="edit">Edit</li>
-                <li data-action="delete-me">Delete for me</li>
-                <li data-action="delete-everyone">Delete for everyone</li>
-            </ul>
+        <!-- Admin Login Screen -->
+        <div id="admin-login-screen" class="screen">
+            <div class="admin-login-container">
+                <h2>Admin Login</h2>
+                <input type="password" id="admin-password" placeholder="Admin Password">
+                <button id="admin-login-btn">Login</button>
+                <button id="admin-back-btn">Back</button>
+                <div id="admin-error" class="error-message"></div>
+            </div>
+        </div>
+        
+        <!-- Admin Dashboard Screen -->
+        <div id="admin-screen" class="screen">
+            <div class="admin-container">
+                <div class="admin-header">
+                    <button id="admin-back">←</button>
+                    <h2>Admin Dashboard</h2>
+                </div>
+                
+                <div class="admin-content">
+                    <div class="admin-stats">
+                        <div class="stat-card">
+                            <h3>Total Users</h3>
+                            <span id="total-users">0</span>
+                        </div>
+                        <div class="stat-card">
+                            <h3>Total Messages</h3>
+                            <span id="total-messages">0</span>
+                        </div>
+                        <div class="stat-card">
+                            <h3>Active Users</h3>
+                            <span id="active-users">0</span>
+                        </div>
+                    </div>
+                    
+                    <div class="admin-section">
+                        <h3>User Management</h3>
+                        <div class="users-list">
+                            <table id="users-table">
+                                <thead>
+                                    <tr>
+                                        <th>Name</th>
+                                        <th>Email</th>
+                                        <th>Status</th>
+                                        <th>Last Seen</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="users-table-body"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                    
+                    <div class="admin-section">
+                        <h3>Message Moderation</h3>
+                        <div id="moderation-panel">
+                            <p>Message moderation features will be implemented here.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
     <script src="/socket.io/socket.io.js"></script>
     <script src="script.js"></script>
 </body>
-</html>
+    </html>
