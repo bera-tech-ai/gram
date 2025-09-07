@@ -19,7 +19,11 @@ const io = socketIo(server, {
 
 // MongoDB connection with better error handling and retry logic
 // Default changed to 127.0.0.1 instead of "mongo"
-const MONGODB_URI = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/novachat';
+// ===== MongoDB Connection =====
+const mongoose = require('mongoose');
+
+// Replace with your Atlas connection string in .env
+const MONGODB_URI = process.env.MONGO_URI;  
 
 console.log('Connecting to MongoDB at:', MONGODB_URI);
 
@@ -31,7 +35,7 @@ const connectWithRetry = () => {
     socketTimeoutMS: 45000,
   })
   .then(() => {
-    console.log('✅ Successfully connected to MongoDB');
+    console.log('✅ Successfully connected to MongoDB Atlas');
   })
   .catch(err => {
     console.error('❌ Failed to connect to MongoDB:', err.message);
@@ -40,25 +44,20 @@ const connectWithRetry = () => {
   });
 };
 
-// Initial connection attempt
 connectWithRetry();
 
-// MongoDB connection events
+// Connection Events
 mongoose.connection.on('connected', () => {
-  console.log('Mongoose connected to MongoDB');
+  console.log('Mongoose connected to MongoDB Atlas');
 });
+
 mongoose.connection.on('error', (err) => {
   console.error('Mongoose connection error:', err);
 });
+
 mongoose.connection.on('disconnected', () => {
-  console.log('Mongoose disconnected from MongoDB');
-});
-process.on('SIGINT', () => {
-  mongoose.connection.close(() => {
-    console.log('Mongoose connection disconnected through app termination');
-    process.exit(0);
-  });
-});
+  console.log('Mongoose disconnected');
+
 // MongoDB Models
 const UserSchema = new mongoose.Schema({
   username: { type: String, required: true, unique: true },
