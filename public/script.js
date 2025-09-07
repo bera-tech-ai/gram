@@ -11,6 +11,64 @@ class NovaChat {
         this.initializeApp();
     }
     
+    // ... other methods remain the same until handleRegister ...
+    
+    async handleRegister(e) {
+        e.preventDefault();
+        
+        const name = document.getElementById('register-name').value;
+        const username = document.getElementById('register-username').value;
+        const email = document.getElementById('register-email').value;
+        const password = document.getElementById('register-password').value;
+        
+        try {
+            const response = await fetch('/api/register', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ username, password, name, email })
+            });
+            
+            const data = await response.json();
+            
+            if (response.ok) {
+                localStorage.setItem('token', data.token);
+                localStorage.setItem('user', JSON.stringify(data.user));
+                this.currentUser = data.user;
+                this.setupSocketConnection(data.token);
+                this.showChatScreen();
+                this.loadContacts();
+            } else {
+                this.showAuthError(data.error);
+            }
+        } catch (error) {
+            this.showAuthError('Registration failed. Please try again.');
+        }
+    }
+    
+    // ... rest of the class remains the same ...
+}
+
+
+
+
+
+
+
+class NovaChat {
+    constructor() {
+        this.socket = null;
+        this.currentUser = null;
+        this.currentChat = null;
+        this.contacts = [];
+        this.messages = new Map();
+        this.isTyping = false;
+        this.typingTimer = null;
+        
+        this.initializeApp();
+    }
+    
     initializeApp() {
         this.checkAuthStatus();
         this.setupEventListeners();
