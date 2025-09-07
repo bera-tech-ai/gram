@@ -75,6 +75,7 @@ process.on('SIGINT', () => {
 // =======================
 const UserSchema = new mongoose.Schema({
   username: { type: String, required: true, unique: true },
+  email: { type: String, unique: true, sparse: true, default: null }, // ✅ Fix for duplicate email issue
   password: { type: String, required: true },
   name: { type: String, required: true },
   profilePicture: { type: String, default: '' },
@@ -94,7 +95,6 @@ const UserSchema = new mongoose.Schema({
   contacts: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
   blockedUsers: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }]
 }, { timestamps: true });
-
 const MessageSchema = new mongoose.Schema({
   sender: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
   recipient: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
