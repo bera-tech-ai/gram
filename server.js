@@ -244,7 +244,24 @@ app.post('/api/login', async (req, res) => {
     if (!user || !(await bcrypt.compare(password, user.password))) {
       return res.status(401).json({ error: 'Invalid credentials' });
     }
+    // Logout
+app.post('/api/logout', authenticateToken, async (req, res) => {
+  try {
+    const users = await readUsers();
+    const userIndex = users.findIndex(u => u.id === req.user.id);
     
+    if (userIndex !== -1) {
+      users[userIndex].isOnline = false;
+      users[userIndex].lastSeen = new Date();
+      await writeUsers(users);
+    }
+    
+    res.json({ message: 'Logged out successfully' });
+  } catch (error) {
+    console.error('Logout error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
     // Update user status
     user.isOnline = true;
     user.lastSeen = new Date();
