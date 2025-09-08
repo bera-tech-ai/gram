@@ -107,12 +107,18 @@ async function readUsers() {
       await fs.writeFile(usersFile, JSON.stringify([]));
       return [];
     }
-    throw error;
+    console.error('Error reading users:', error);
+    return [];
   }
 }
 
 async function writeUsers(users) {
-  await fs.writeFile(usersFile, JSON.stringify(users, null, 2));
+  try {
+    await fs.writeFile(usersFile, JSON.stringify(users, null, 2));
+  } catch (error) {
+    console.error('Error writing users:', error);
+    throw error;
+  }
 }
 
 // Authentication middleware
@@ -195,29 +201,31 @@ app.post('/api/register', async (req, res) => {
     await writeUsers(users);
     
     // Create AI conversation for the user
-    const aiConversation = new AIConversation({
-      userId: newUser.id,
-      personality: 'friendly'
-    });
-    await aiConversation.save();
+    try {
+      const aiConversation = new AIConversation({
+        userId: newUser.id,
+        personality: 'friendly'
+      });
+      await aiConversation.save();
+    } catch (aiError) {
+      console.error('Error creating AI conversation:', aiError);
+      // Continue even if AI conversation fails
+    }
     
     // Generate token
     const token = jwt.sign({ userId: newUser.id }, JWT_SECRET);
     
+    // Return user data without password
+    const { password: _, ...userWithoutPassword } = newUser;
+    
     res.status(201).json({
       message: 'User created successfully',
       token,
-      user: {
-        id: newUser.id,
-        email: newUser.email,
-        displayName: newUser.displayName,
-        profilePicture: newUser.profilePicture,
-        status: newUser.status
-      }
+      user: userWithoutPassword
     });
   } catch (error) {
     console.error('Registration error:', error);
-    res.status(500).json({ error: 'Internal server error' });
+    res.status(500).json({ error: 'Internal server error: ' + error.message });
   }
 });
 
