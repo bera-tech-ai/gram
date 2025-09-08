@@ -3,197 +3,237 @@ class NovaChat {
         this.socket = null;
         this.currentUser = null;
         this.currentChat = null;
-        this.messages = [];
         this.contacts = [];
-        this.unreadMessages = {};
-        this.typingTimers = {};
-        this.isTyping = {};
+        this.messages = new Map();
+        this.typingTimers = new Map();
+        this.theme = 'light';
+        this.emojiPicker = null;
+        this.offlineMessages = [];
+        this.isOnline = navigator.onLine;
         
-        this.initializeApp();
+        this.init();
     }
     
-    initializeApp() {
-        this.checkAuthStatus();
+    init() {
+        this.checkAuth();
         this.setupEventListeners();
-        this.registerServiceWorker();
+        this.setupServiceWorker();
+        this.detectThemePreference();
+        this.setupOnlineOfflineListeners();
     }
     
-    async checkAuthStatus() {
+    checkAuth() {
         const token = localStorage.getItem('token');
         if (token) {
-            try {
-                // Verify token is still valid
-                const response = await fetch('/api/user/me', {
-                    headers: {
-                        'Authorization': `Bearer ${token}`
-                    }
-                });
-                
-                if (response.ok) {
-                    const user = await response.json();
-                    this.currentUser = user;
-                    this.showChatScreen();
-                    this.connectSocket();
-                    this.loadContacts();
-                } else {
-                    this.showAuthScreen();
-                }
-            } catch (error) {
-                console.error('Auth check failed:', error);
-                this.showAuthScreen();
-            }
+            this.validateToken(token);
         } else {
             this.showAuthScreen();
         }
     }
     
-    showAuthScreen() {
-        this.hideAllScreens();
-        document.getElementById('auth-screen').classList.add('active');
+    async validateToken(token) {
+        try {
+            const response = await fetch('/api/profile', {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+            
+            if (response.ok) {
+                const user = await response.json();
+                this.currentUser = user;
+                this.setupSocketConnection(token);
+                this.loadUserData();
+                this.showChatScreen();
+            } else {
+                localStorage.removeItem('token');
+                this.showAuthScreen();
+            }
+        } catch (error) {
+            console.error('Token validation error:', error);
+            localStorage.removeItem('token');
+            this.showAuthScreen();
+        }
     }
     
-    showChatScreen() {
-        this.hideAllScreens();
-        document.getElementById('chat-screen').classList.add('active');
+    setupSocketConnection(token) {
+        this.socket = io();
         
-        // Update user info in UI
-        document.getElementById('user-name').textContent = this.currentUser.displayName;
-        document.getElementById('user-avatar').src = this.currentUser.profilePicture || '/default-avatar.png';
-    }
-    
-    showSettingsScreen() {
-        this.hideAllScreens();
-        document.getElementById('settings-screen').classList.add('active');
+        this.socket.on('connect', () => {
+            console.log('Connected to server');
+            this.socket.emit('authenticate', token);
+        });
         
-        // Populate settings with current user data
-        document.getElementById('settings-avatar').src = this.currentUser.profilePicture || '/default-avatar.png';
-        document.getElementById('profile-name').value = this.currentUser.displayName;
-        document.getElementById('profile-status').value = this.currentUser.status || '';
-        document.getElementById('last-seen-setting').value = this.currentUser.privacy?.lastSeen || 'everyone';
-        document.getElementById('read-receipts-setting').checked = this.currentUser.privacy?.readReceipts !== false;
+        this.socket.on('disconnect', () => {
+            console.log('Disconnected from server');
+        });
         
-        // Set AI settings
-        document.getElementById('ai-name').value = this.currentUser.aiSettings?.name || 'Bera AI';
-        document.getElementById('ai-personality').value = this.currentUser.aiSettings?.personality || 'friendly';
+        this.socket.on('newMessage', (message) => {
+            this.handleNewMessage(message);
+        });
         
-        // Set theme
-        document.querySelector(`input[name="theme"][value="${this.currentUser.theme || 'light'}"]`).checked = true;
-    }
-    
-    showAdminLoginScreen() {
-        this.hideAllScreens();
-        document.getElementById('admin-login-screen').classList.add('active');
-    }
-    
-    showAdminScreen() {
-        this.hideAllScreens();
-        document.getElementById('admin-screen').classList.add('active');
-        this.loadAdminStats();
-        this.loadUsersList();
-    }
-    
-    hideAllScreens() {
-        document.querySelectorAll('.screen').forEach(screen => {
-            screen.classList.remove('active');
+        this.socket.on('messageSent', (data) => {
+            this.handleMessageSent(data);
+        });
+        
+        this.socket.on('messageRead', (data) => {
+            this.handleMessageRead(data);
+        });
+        
+        this.socket.on('messageEdited', (data) => {
+            this.handleMessageEdited(data);
+        });
+        
+        this.socket.on('messageDeleted', (data) => {
+            this.handleMessageDeleted(data);
+        });
+        
+        this.socket.on('typing', (data) => {
+            this.handleTypingIndicator(data);
+        });
+        
+        this.socket.on('userStatus', (data) => {
+            this.handleUserStatus(data);
+        });
+        
+        this.socket.on('error', (error) => {
+            this.showMessage(error, 'error');
         });
     }
     
     setupEventListeners() {
-        // Auth screen events
-        document.querySelectorAll('.tab-btn').forEach(btn => {
-            btn.addEventListener('click', (e) => {
+        // Auth forms
+        document.getElementById('login-form').addEventListener('submit', (e) => this.handleLogin(e));
+        document.getElementById('register-form').addEventListener('submit', (e) => this.handleRegister(e));
+        
+        // Auth tabs
+        document.querySelectorAll('.tab-button').forEach(button => {
+            button.addEventListener('click', (e) => {
                 const tab = e.target.dataset.tab;
                 this.switchAuthTab(tab);
             });
         });
         
-        document.getElementById('login-form').addEventListener('submit', (e) => {
-            e.preventDefault();
-            this.login();
-        });
+        // Chat actions
+        document.getElementById('menu-btn').addEventListener('click', () => this.toggleSettings());
+        document.getElementById('close-settings').addEventListener('click', () => this.toggleSettings());
+        document.getElementById('logout-btn').addEventListener('click', () => this.handleLogout());
         
-        document.getElementById('register-form').addEventListener('submit', (e) => {
-            e.preventDefault();
-            this.register();
-        });
-        
-        // Chat screen events
-        document.getElementById('settings-btn').addEventListener('click', () => {
-            this.showSettingsScreen();
-        });
-        
-        document.getElementById('back-to-chat').addEventListener('click', () => {
-            this.showChatScreen();
-        });
-        
-        document.getElementById('send-btn').addEventListener('click', () => {
-            this.sendMessage();
-        });
-        
+        // Message input
+        document.getElementById('message-input').addEventListener('input', (e) => this.handleMessageInput(e));
         document.getElementById('message-input').addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
                 this.sendMessage();
             }
         });
+        document.getElementById('send-btn').addEventListener('click', () => this.sendMessage());
         
-        document.getElementById('message-input').addEventListener('input', () => {
-            this.handleTyping();
+        // Emoji and attachment
+        document.getElementById('emoji-btn').addEventListener('click', () => this.toggleEmojiPicker());
+        document.getElementById('attach-btn').addEventListener('click', () => this.toggleAttachmentMenu());
+        
+        // Settings
+        document.getElementById('save-profile').addEventListener('click', () => this.saveProfile());
+        document.getElementById('theme-select').addEventListener('change', (e) => this.changeTheme(e.target.value));
+        document.getElementById('save-ai-settings').addEventListener('click', () => this.saveAISettings());
+        
+        // Admin
+        document.getElementById('admin-login-btn').addEventListener('click', () => this.showAdminLogin());
+        document.getElementById('admin-login-submit').addEventListener('click', () => this.handleAdminLogin());
+        document.querySelector('.close-modal').addEventListener('click', () => this.hideAdminLogin());
+        document.getElementById('back-to-chat').addEventListener('click', () => this.showChatScreen());
+        
+        // Admin tabs
+        document.querySelectorAll('.admin-nav-btn').forEach(button => {
+            button.addEventListener('click', (e) => {
+                const tab = e.target.dataset.tab;
+                this.switchAdminTab(tab);
+            });
         });
         
-        document.getElementById('admin-btn').addEventListener('click', () => {
-            this.showAdminLoginScreen();
-        });
+        // Contact search
+        document.getElementById('search-contacts').addEventListener('input', (e) => this.filterContacts(e.target.value));
         
-        document.getElementById('admin-back-btn').addEventListener('click', () => {
-            this.showSettingsScreen();
-        });
-        
-        document.getElementById('admin-login-btn').addEventListener('click', () => {
-            this.adminLogin();
-        });
-        
-        document.getElementById('admin-back').addEventListener('click', () => {
-            this.showSettingsScreen();
-        });
-        
-        document.getElementById('logout-btn').addEventListener('click', () => {
-            this.logout();
-        });
-        
-        document.getElementById('save-profile').addEventListener('click', () => {
-            this.saveProfile();
-        });
-        
-        // Contact list click
-        document.getElementById('contacts-container').addEventListener('click', (e) => {
-            const contactItem = e.target.closest('.contact-item');
-            if (contactItem) {
-                const contactId = contactItem.dataset.id;
-                this.selectChat(contactId);
+        // Contact clicks
+        document.addEventListener('click', (e) => {
+            if (e.target.closest('.contact')) {
+                const contact = e.target.closest('.contact');
+                const userId = contact.dataset.id;
+                this.selectChat(userId);
+            }
+            
+            // Close emoji picker and attachment menu when clicking outside
+            if (!e.target.closest('#emoji-picker') && !e.target.closest('#emoji-btn')) {
+                this.hideEmojiPicker();
+            }
+            
+            if (!e.target.closest('#attachment-menu') && !e.target.closest('#attach-btn')) {
+                this.hideAttachmentMenu();
+            }
+            
+            // Close context menu
+            if (!e.target.closest('#message-context-menu') && !e.target.closest('.message-bubble')) {
+                this.hideContextMenu();
             }
         });
         
-        // AI contact click
-        document.querySelector('.ai-contact').addEventListener('click', () => {
-            this.selectChat('ai');
+        // Message context menu
+        document.addEventListener('contextmenu', (e) => {
+            if (e.target.closest('.message-bubble')) {
+                e.preventDefault();
+                const messageElement = e.target.closest('.message');
+                const messageId = messageElement.dataset.messageId;
+                this.showContextMenu(e, messageId);
+            }
         });
-    }
-    
-    switchAuthTab(tab) {
-        // Update active tab
-        document.querySelectorAll('.tab-btn').forEach(btn => {
-            btn.classList.remove('active');
-        });
-        document.querySelector(`[data-tab="${tab}"]`).classList.add('active');
         
-        // Show correct form
-        document.querySelectorAll('.auth-form').forEach(form => {
-            form.classList.remove('active');
-        });
-        document.getElementById(`${tab}-form`).classList.add('active');
+        // Handle file upload
+        document.getElementById('avatar-upload').addEventListener('change', (e) => this.handleAvatarUpload(e));
     }
     
-    async login() {
+    setupServiceWorker() {
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/service-worker.js')
+                    .then((registration) => {
+                        console.log('SW registered: ', registration);
+                    })
+                    .catch((registrationError) => {
+                        console.log('SW registration failed: ', registrationError);
+                    });
+            });
+        }
+    }
+    
+    detectThemePreference() {
+        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        const savedTheme = localStorage.getItem('theme');
+        
+        if (savedTheme) {
+            this.theme = savedTheme;
+        } else {
+            this.theme = prefersDark ? 'dark' : 'light';
+        }
+        
+        this.applyTheme();
+    }
+    
+    setupOnlineOfflineListeners() {
+        window.addEventListener('online', () => {
+            this.isOnline = true;
+            this.showMessage('You are back online', 'success');
+            this.sendOfflineMessages();
+        });
+        
+        window.addEventListener('offline', () => {
+            this.isOnline = false;
+            this.showMessage('You are offline. Messages will be sent when you reconnect.', 'warning');
+        });
+    }
+    
+    async handleLogin(e) {
+        e.preventDefault();
         const email = document.getElementById('login-email').value;
         const password = document.getElementById('login-password').value;
         
@@ -211,21 +251,29 @@ class NovaChat {
             if (response.ok) {
                 localStorage.setItem('token', data.token);
                 this.currentUser = data.user;
+                this.setupSocketConnection(data.token);
+                this.loadUserData();
                 this.showChatScreen();
-                this.connectSocket();
-                this.loadContacts();
             } else {
-                document.getElementById('auth-error').textContent = data.error;
+                this.showMessage(data.error, 'error');
             }
         } catch (error) {
-            document.getElementById('auth-error').textContent = 'Login failed. Please try again.';
+            console.error('Login error:', error);
+            this.showMessage('Login failed. Please try again.', 'error');
         }
     }
     
-    async register() {
+    async handleRegister(e) {
+        e.preventDefault();
         const displayName = document.getElementById('register-name').value;
         const email = document.getElementById('register-email').value;
         const password = document.getElementById('register-password').value;
+        const confirmPassword = document.getElementById('register-confirm').value;
+        
+        if (password !== confirmPassword) {
+            this.showMessage('Passwords do not match', 'error');
+            return;
+        }
         
         try {
             const response = await fetch('/api/register', {
@@ -239,56 +287,48 @@ class NovaChat {
             const data = await response.json();
             
             if (response.ok) {
-                localStorage.setItem('token', data.token);
-                this.currentUser = data.user;
-                this.showChatScreen();
-                this.connectSocket();
-                this.loadContacts();
+                this.showMessage('Registration successful. Please login.', 'success');
+                this.switchAuthTab('login');
             } else {
-                document.getElementById('auth-error').textContent = data.error;
+                this.showMessage(data.error, 'error');
             }
         } catch (error) {
-            document.getElementById('auth-error').textContent = 'Registration failed. Please try again.';
+            console.error('Registration error:', error);
+            this.showMessage('Registration failed. Please try again.', 'error');
         }
     }
     
-    connectSocket() {
-        this.socket = io();
+    switchAuthTab(tab) {
+        document.querySelectorAll('.auth-form').forEach(form => form.classList.remove('active'));
+        document.querySelectorAll('.tab-button').forEach(button => button.classList.remove('active'));
         
-        this.socket.emit('join', this.currentUser.id);
+        document.getElementById(`${tab}-form`).classList.add('active');
+        document.querySelector(`[data-tab="${tab}"]`).classList.add('active');
+    }
+    
+    showAuthScreen() {
+        document.querySelectorAll('.screen').forEach(screen => screen.classList.remove('active'));
+        document.getElementById('auth-screen').classList.add('active');
+    }
+    
+    showChatScreen() {
+        document.querySelectorAll('.screen').forEach(screen => screen.classList.remove('active'));
+        document.getElementById('chat-screen').classList.add('active');
         
-        this.socket.on('new_message', (message) => {
-            this.handleNewMessage(message);
-        });
+        this.updateUserProfile();
+        this.loadContacts();
+    }
+    
+    showAdminDashboard() {
+        document.querySelectorAll('.screen').forEach(screen => screen.classList.remove('active'));
+        document.getElementById('admin-dashboard').classList.add('active');
         
-        this.socket.on('message_sent', (message) => {
-            this.handleMessageSent(message);
-        });
-        
-        this.socket.on('message_status', (data) => {
-            this.updateMessageStatus(data.messageId, data.status);
-        });
-        
-        this.socket.on('typing_start', (data) => {
-            this.showTypingIndicator(data.senderId);
-        });
-        
-        this.socket.on('typing_stop', (data) => {
-            this.hideTypingIndicator(data.senderId);
-        });
-        
-        this.socket.on('message_edited', (data) => {
-            this.updateEditedMessage(data);
-        });
-        
-        this.socket.on('message_deleted', (data) => {
-            this.removeMessage(data.messageId);
-        });
-        
-        this.socket.on('banned', () => {
-            alert('Your account has been banned.');
-            this.logout();
-        });
+        this.loadAdminData();
+    }
+    
+    async loadUserData() {
+        await this.loadContacts();
+        this.loadUserSettings();
     }
     
     async loadContacts() {
@@ -305,456 +345,640 @@ class NovaChat {
                 this.renderContacts();
             }
         } catch (error) {
-            console.error('Failed to load contacts:', error);
+            console.error('Error loading contacts:', error);
         }
     }
     
     renderContacts() {
-        const contactsContainer = document.getElementById('contacts-container');
-        contactsContainer.innerHTML = '';
+        const contactsList = document.querySelector('.contacts-list');
+        // Clear existing contacts except AI
+        const aiContact = contactsList.querySelector('.ai-contact');
+        contactsList.innerHTML = '';
+        contactsList.appendChild(aiContact);
         
         this.contacts.forEach(contact => {
             const contactElement = document.createElement('div');
-            contactElement.className = 'contact-item';
-            contactElement.dataset.id = contact._id;
+            contactElement.className = 'contact';
+            contactElement.dataset.id = contact.id;
             
-            const lastSeen = this.formatLastSeen(contact.lastSeen);
-            const unreadCount = this.unreadMessages[contact._id] || 0;
+            const avatar = contact.profilePicture 
+                ? `<img src="${contact.profilePicture}" alt="${contact.displayName}">`
+                : `<div>${contact.displayName.charAt(0).toUpperCase()}</div>`;
+            
+            const status = contact.isOnline 
+                ? '<span class="online-dot"></span>Online'
+                : `Last seen ${this.formatTime(contact.lastSeen)}`;
             
             contactElement.innerHTML = `
-                <img src="${contact.profilePicture || '/default-avatar.png'}" alt="${contact.displayName}">
+                <div class="contact-avatar">${avatar}</div>
                 <div class="contact-info">
-                    <span class="contact-name">${contact.displayName}</span>
-                    <span class="contact-status">${contact.isOnline ? 'Online' : lastSeen}</span>
+                    <div class="contact-name">${contact.displayName}</div>
+                    <div class="contact-status">${status}</div>
                 </div>
-                ${unreadCount > 0 ? `<span class="unread-count">${unreadCount}</span>` : ''}
+                <div class="contact-time"></div>
             `;
             
-            contactsContainer.appendChild(contactElement);
+            contactsList.appendChild(contactElement);
         });
     }
     
-    async selectChat(contactId) {
-        // Clear previous chat selection
-        document.querySelectorAll('.contact-item').forEach(item => {
-            item.classList.remove('active');
-        });
+    async selectChat(userId) {
+        this.currentChat = userId;
         
-        // Highlight selected contact
-        document.querySelector(`.contact-item[data-id="${contactId}"]`)?.classList.add('active');
-        
-        this.currentChat = contactId;
+        // Update UI
+        document.querySelectorAll('.contact').forEach(contact => contact.classList.remove('active'));
+        document.querySelector(`.contact[data-id="${userId}"]`).classList.add('active');
         
         // Update chat header
-        if (contactId === 'ai') {
-            document.getElementById('chat-name').textContent = 'Bera AI';
-            document.getElementById('chat-avatar').src = '/ai-avatar.png';
-            document.getElementById('chat-status').textContent = 'AI Assistant';
-        } else {
-            const contact = this.contacts.find(c => c._id === contactId);
-            if (contact) {
-                document.getElementById('chat-name').textContent = contact.displayName;
-                document.getElementById('chat-avatar').src = contact.profilePicture || '/default-avatar.png';
-                document.getElementById('chat-status').textContent = contact.isOnline ? 'Online' : this.formatLastSeen(contact.lastSeen);
+        const chatHeader = document.querySelector('.chat-header');
+        const contact = userId === 'ai' 
+            ? { displayName: 'Bera AI', isOnline: true } 
+            : this.contacts.find(c => c.id === userId);
+        
+        if (contact) {
+            chatHeader.querySelector('.partner-name').textContent = contact.displayName;
+            chatHeader.querySelector('.partner-status').innerHTML = contact.isOnline 
+                ? '<span class="online-dot"></span>Online'
+                : `Last seen ${this.formatTime(contact.lastSeen)}`;
+            
+            // Enable call buttons for real users, disable for AI
+            const callBtn = document.getElementById('call-btn');
+            const videoCallBtn = document.getElementById('video-call-btn');
+            if (userId === 'ai') {
+                callBtn.disabled = true;
+                videoCallBtn.disabled = true;
+            } else {
+                callBtn.disabled = false;
+                videoCallBtn.disabled = false;
             }
         }
         
-        // Load messages
-        await this.loadMessages(contactId);
+        // Enable message input
+        document.getElementById('message-input').disabled = false;
+        document.getElementById('send-btn').disabled = false;
         
-        // Mark messages as read
-        this.markMessagesAsRead();
+        // Load messages
+        await this.loadMessages(userId);
     }
     
-    async loadMessages(contactId) {
+    async loadMessages(userId) {
         try {
             const token = localStorage.getItem('token');
-            const response = await fetch(`/api/messages/${contactId}`, {
+            const response = await fetch(`/api/messages/${userId}`, {
                 headers: {
                     'Authorization': `Bearer ${token}`
                 }
             });
             
             if (response.ok) {
-                this.messages = await response.json();
-                this.renderMessages();
+                const messages = await response.json();
+                this.messages.set(userId, messages);
+                this.renderMessages(messages);
                 
-                // Scroll to bottom
-                const messagesContainer = document.getElementById('messages-list');
-                messagesContainer.scrollTop = messagesContainer.scrollHeight;
+                // Mark messages as read
+                messages.forEach(message => {
+                    if (message.senderId !== this.currentUser.id && !message.readBy.includes(this.currentUser.id)) {
+                        this.socket.emit('messageRead', message._id);
+                    }
+                });
             }
         } catch (error) {
-            console.error('Failed to load messages:', error);
+            console.error('Error loading messages:', error);
         }
     }
     
-    renderMessages() {
-        const messagesList = document.getElementById('messages-list');
-        messagesList.innerHTML = '';
+    renderMessages(messages) {
+        const messagesContainer = document.querySelector('.messages-container');
+        messagesContainer.innerHTML = '';
         
-        this.messages.forEach(message => {
-            const messageElement = document.createElement('div');
-            messageElement.className = `message ${message.sender._id === this.currentUser.id ? 'sent' : 'received'}`;
-            messageElement.dataset.id = message._id;
-            
-            const time = this.formatTime(message.timestamp);
-            const editedBadge = message.isEdited ? '<span class="message-edited">(edited)</span>' : '';
-            
-            messageElement.innerHTML = `
-                <div class="message-content">${message.content}</div>
-                <div class="message-time">${time} ${editedBadge}</div>
-                <div class="message-actions">
-                    ${message.sender._id === this.currentUser.id ? `
-                        <button class="edit-btn" title="Edit">✏️</button>
-                        <button class="delete-btn" title="Delete">🗑️</button>
-                    ` : ''}
+        if (messages.length === 0) {
+            messagesContainer.innerHTML = `
+                <div class="no-chat-selected">
+                    <p>No messages yet. Start a conversation!</p>
                 </div>
             `;
-            
-            messagesList.appendChild(messageElement);
-            
-            // Add event listeners for message actions
-            if (message.sender._id === this.currentUser.id) {
-                const editBtn = messageElement.querySelector('.edit-btn');
-                const deleteBtn = messageElement.querySelector('.delete-btn');
-                
-                editBtn.addEventListener('click', () => {
-                    this.editMessage(message._id);
-                });
-                
-                deleteBtn.addEventListener('click', () => {
-                    this.deleteMessage(message._id);
-                });
-            }
+            return;
+        }
+        
+        messages.forEach(message => {
+            this.renderMessage(message);
         });
+        
+        // Scroll to bottom
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
     }
     
-    async sendMessage() {
+    renderMessage(message) {
+        const messagesContainer = document.querySelector('.messages-container');
+        const messageElement = document.createElement('div');
+        
+        messageElement.className = `message ${message.senderId === this.currentUser.id ? 'sent' : message.senderId === 'ai' ? 'ai' : 'received'}`;
+        messageElement.dataset.messageId = message._id;
+        
+        let messageContent = '';
+        
+        switch (message.messageType) {
+            case 'image':
+                messageContent = `<div class="media-message"><img src="${message.mediaUrl}" alt="Image"></div>`;
+                break;
+            case 'video':
+                messageContent = `<div class="media-message"><video controls><source src="${message.mediaUrl}"></video></div>`;
+                break;
+            case 'audio':
+                messageContent = `
+                    <div class="audio-message">
+                        <audio controls></audio>
+                        <span>Audio message</span>
+                    </div>
+                `;
+                break;
+            case 'document':
+                messageContent = `
+                    <div class="document-message">
+                        <div class="document-icon">📄</div>
+                        <div class="document-info">
+                            <div class="document-name">${message.fileName}</div>
+                            <div class="document-size">${this.formatFileSize(message.fileSize)}</div>
+                        </div>
+                    </div>
+                `;
+                break;
+            default:
+                messageContent = `<div class="message-content">${this.escapeHtml(message.content)}</div>`;
+        }
+        
+        const statusIcon = message.senderId === this.currentUser.id
+            ? this.getMessageStatusIcon(message)
+            : '';
+        
+        const editedBadge = message.edited ? '<span class="message-edited">(edited)</span>' : '';
+        
+        messageElement.innerHTML = `
+            <div class="message-bubble">
+                ${messageContent}
+                <div class="message-meta">
+                    <span class="message-time">${this.formatTime(message.timestamp)}</span>
+                    ${statusIcon}
+                    ${editedBadge}
+                </div>
+            </div>
+        `;
+        
+        messagesContainer.appendChild(messageElement);
+        
+        // Add audio element for audio messages
+        if (message.messageType === 'audio') {
+            const audioElement = messageElement.querySelector('audio');
+            const sourceElement = document.createElement('source');
+            sourceElement.src = message.mediaUrl;
+            audioElement.appendChild(sourceElement);
+        }
+    }
+    
+    getMessageStatusIcon(message) {
+        if (message.readBy && message.readBy.includes(message.receiverId)) {
+            return '✓✓✓';
+        } else if (message.receiverId === 'ai' || message.readBy && message.readBy.length > 0) {
+            return '✓✓';
+        } else {
+            return '✓';
+        }
+    }
+    
+    handleMessageInput(e) {
+        if (this.currentChat) {
+            this.socket.emit('typing', {
+                receiverId: this.currentChat,
+                isTyping: true
+            });
+            
+            // Clear previous timer
+            if (this.typingTimers.has(this.currentChat)) {
+                clearTimeout(this.typingTimers.get(this.currentChat));
+            }
+            
+            // Set new timer to stop typing indicator
+            const timer = setTimeout(() => {
+                this.socket.emit('typing', {
+                    receiverId: this.currentChat,
+                    isTyping: false
+                });
+            }, 1000);
+            
+            this.typingTimers.set(this.currentChat, timer);
+        }
+    }
+    
+    sendMessage() {
         const input = document.getElementById('message-input');
         const content = input.value.trim();
         
         if (!content || !this.currentChat) return;
         
+        // Generate temporary ID for optimistic UI
+        const tempId = `temp-${Date.now()}`;
+        
+        // Create optimistic message
+        const tempMessage = {
+            _id: tempId,
+            senderId: this.currentUser.id,
+            receiverId: this.currentChat,
+            content,
+            messageType: 'text',
+            timestamp: new Date(),
+            readBy: this.currentChat === 'ai' ? [this.currentUser.id] : []
+        };
+        
+        // Add to UI immediately
+        this.renderMessage(tempMessage);
+        
+        // Scroll to bottom
+        document.querySelector('.messages-container').scrollTop = document.querySelector('.messages-container').scrollHeight;
+        
         // Clear input
         input.value = '';
         
-        if (this.currentChat === 'ai') {
-            // Handle AI chat
-            this.sendMessageToAI(content);
+        // Send via socket
+        if (this.isOnline) {
+            this.socket.emit('sendMessage', {
+                receiverId: this.currentChat,
+                content,
+                tempId
+            });
         } else {
-            // Send regular message
-            this.socket.emit('send_message', {
-                senderId: this.currentUser.id,
-                recipientId: this.currentChat,
-                content: content
+            // Store for sending when online
+            this.offlineMessages.push({
+                receiverId: this.currentChat,
+                content,
+                tempId
             });
-        }
-    }
-    
-    async sendMessageToAI(content) {
-        try {
-            const token = localStorage.getItem('token');
-            
-            // Add user message to UI immediately
-            const userMessage = {
-                _id: 'temp-' + Date.now(),
-                sender: { _id: this.currentUser.id, displayName: this.currentUser.displayName },
-                recipient: { _id: 'ai', displayName: 'Bera AI' },
-                content: content,
-                timestamp: new Date(),
-                status: 'sent'
-            };
-            
-            this.messages.push(userMessage);
-            this.renderMessages();
-            
-            // Scroll to bottom
-            const messagesContainer = document.getElementById('messages-list');
-            messagesContainer.scrollTop = messagesContainer.scrollHeight;
-            
-            // Prepare conversation history
-            const conversationHistory = this.messages.slice(-10).map(msg => ({
-                role: msg.sender._id === this.currentUser.id ? 'user' : 'assistant',
-                content: msg.content
-            }));
-            
-            // Call AI API
-            const response = await fetch('/api/ai/chat', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
-                body: JSON.stringify({
-                    message: content,
-                    conversationHistory: conversationHistory
-                })
-            });
-            
-            if (response.ok) {
-                const data = await response.json();
-                
-                // Add AI response to messages
-                this.messages.push(data.message);
-                this.renderMessages();
-                
-                // Scroll to bottom
-                messagesContainer.scrollTop = messagesContainer.scrollHeight;
-            } else {
-                throw new Error('AI request failed');
-            }
-        } catch (error) {
-            console.error('Error communicating with AI:', error);
-            alert('Failed to get response from Bera AI. Please try again.');
+            this.showMessage('Message will be sent when you are back online', 'warning');
         }
     }
     
     handleNewMessage(message) {
-        // Add message to current chat if it's the active one
-        if (this.currentChat === message.sender._id) {
-            this.messages.push(message);
-            this.renderMessages();
+        // Check if this message is for the current chat
+        if (this.currentChat && 
+            (message.senderId === this.currentChat || 
+             (message.senderId === this.currentUser.id && message.receiverId === this.currentChat))) {
             
-            // Scroll to bottom
-            const messagesContainer = document.getElementById('messages-list');
-            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+            // Check if we already have this message (optimistic update)
+            const messages = this.messages.get(this.currentChat) || [];
+            const existingIndex = messages.findIndex(m => m._id === message._id);
             
-            // Mark as read if chat is active
-            this.markMessagesAsRead();
-        } else {
-            // Update unread count
-            this.unreadMessages[message.sender._id] = (this.unreadMessages[message.sender._id] || 0) + 1;
-            this.renderContacts();
-        }
-    }
-    
-    handleMessageSent(message) {
-        // Replace temporary message with the one from server
-        const index = this.messages.findIndex(m => m._id === message._id);
-        if (index !== -1) {
-            this.messages[index] = message;
-        } else {
-            this.messages.push(message);
-        }
-        
-        this.renderMessages();
-    }
-    
-    updateMessageStatus(messageId, status) {
-        const message = this.messages.find(m => m._id === messageId);
-        if (message) {
-            message.status = status;
-            this.renderMessages();
-        }
-    }
-    
-    handleTyping() {
-        if (!this.currentChat || this.currentChat === 'ai') return;
-        
-        // Clear previous timer
-        if (this.typingTimers[this.currentChat]) {
-            clearTimeout(this.typingTimers[this.currentChat]);
-        }
-        
-        // Emit typing start if not already typing
-        if (!this.isTyping[this.currentChat]) {
-            this.socket.emit('typing_start', {
-                senderId: this.currentUser.id,
-                recipientId: this.currentChat
-            });
-            this.isTyping[this.currentChat] = true;
-        }
-        
-        // Set timer to stop typing indicator
-        this.typingTimers[this.currentChat] = setTimeout(() => {
-            this.socket.emit('typing_stop', {
-                senderId: this.currentUser.id,
-                recipientId: this.currentChat
-            });
-            this.isTyping[this.currentChat] = false;
-        }, 1000);
-    }
-    
-    showTypingIndicator(userId) {
-        if (this.currentChat === userId) {
-            const contact = this.contacts.find(c => c._id === userId);
-            if (contact) {
-                document.getElementById('typing-indicator').textContent = `${contact.displayName} is typing...`;
-            }
-        }
-    }
-    
-    hideTypingIndicator(userId) {
-        if (this.currentChat === userId) {
-            document.getElementById('typing-indicator').textContent = '';
-        }
-    }
-    
-    markMessagesAsRead() {
-        if (!this.currentChat || this.currentChat === 'ai') return;
-        
-        const unreadMessageIds = this.messages
-            .filter(m => m.sender._id === this.currentChat && m.status !== 'read')
-            .map(m => m._id);
-        
-        if (unreadMessageIds.length > 0) {
-            this.socket.emit('messages_read', {
-                readerId: this.currentUser.id,
-                messageIds: unreadMessageIds
-            });
-            
-            // Update UI immediately
-            this.messages.forEach(m => {
-                if (unreadMessageIds.includes(m._id)) {
-                    m.status = 'read';
+            if (existingIndex === -1) {
+                messages.push(message);
+                this.messages.set(this.currentChat, messages);
+                this.renderMessage(message);
+                
+                // Scroll to bottom
+                document.querySelector('.messages-container').scrollTop = document.querySelector('.messages-container').scrollHeight;
+                
+                // Mark as read if it's not our own message
+                if (message.senderId !== this.currentUser.id) {
+                    this.socket.emit('messageRead', message._id);
                 }
-            });
+            }
+        }
+        
+        // Show notification if chat is not active
+        if (!this.currentChat || (message.senderId !== this.currentChat && message.senderId !== this.currentUser.id)) {
+            this.showNotification(message);
+        }
+    }
+    
+    handleMessageSent(data) {
+        // Replace temporary message with real one
+        const tempMessage = document.querySelector(`[data-message-id="${data.tempId}"]`);
+        if (tempMessage) {
+            tempMessage.remove();
+            this.renderMessage(data.message);
             
-            this.renderMessages();
-            
-            // Clear unread count
-            if (this.unreadMessages[this.currentChat]) {
-                delete this.unreadMessages[this.currentChat];
-                this.renderContacts();
+            // Update messages map
+            const messages = this.messages.get(this.currentChat) || [];
+            const tempIndex = messages.findIndex(m => m._id === data.tempId);
+            if (tempIndex !== -1) {
+                messages[tempIndex] = data.message;
+            } else {
+                messages.push(data.message);
+            }
+            this.messages.set(this.currentChat, messages);
+        }
+    }
+    
+    handleMessageRead(data) {
+        // Update message status in UI
+        const messageElement = document.querySelector(`[data-message-id="${data.messageId}"]`);
+        if (messageElement) {
+            const statusElement = messageElement.querySelector('.message-status');
+            if (statusElement) {
+                statusElement.textContent = '✓✓✓';
+            }
+        }
+        
+        // Update messages map
+        const messages = this.messages.get(this.currentChat) || [];
+        const messageIndex = messages.findIndex(m => m._id === data.messageId);
+        if (messageIndex !== -1) {
+            if (!messages[messageIndex].readBy.includes(data.readBy)) {
+                messages[messageIndex].readBy.push(data.readBy);
             }
         }
     }
     
-    async editMessage(messageId) {
-        const message = this.messages.find(m => m._id === messageId);
-        if (!message) return;
+    handleMessageEdited(data) {
+        // Update message in UI
+        const messageElement = document.querySelector(`[data-message-id="${data.messageId}"]`);
+        if (messageElement) {
+            const contentElement = messageElement.querySelector('.message-content');
+            if (contentElement) {
+                contentElement.textContent = data.newContent;
+            }
+            
+            // Add edited badge if not already there
+            if (!messageElement.querySelector('.message-edited')) {
+                const metaElement = messageElement.querySelector('.message-meta');
+                const editedBadge = document.createElement('span');
+                editedBadge.className = 'message-edited';
+                editedBadge.textContent = '(edited)';
+                metaElement.appendChild(editedBadge);
+            }
+        }
         
-        const newContent = prompt('Edit your message:', message.content);
-        if (newContent && newContent !== message.content) {
+        // Update messages map
+        const messages = this.messages.get(this.currentChat) || [];
+        const messageIndex = messages.findIndex(m => m._id === data.messageId);
+        if (messageIndex !== -1) {
+            messages[messageIndex].content = data.newContent;
+            messages[messageIndex].edited = true;
+        }
+    }
+    
+    handleMessageDeleted(data) {
+        // Remove message from UI
+        const messageElement = document.querySelector(`[data-message-id="${data.messageId}"]`);
+        if (messageElement) {
+            messageElement.remove();
+        }
+        
+        // Update messages map
+        if (data.forEveryone) {
+            const messages = this.messages.get(this.currentChat) || [];
+            const messageIndex = messages.findIndex(m => m._id === data.messageId);
+            if (messageIndex !== -1) {
+                messages.splice(messageIndex, 1);
+            }
+        }
+    }
+    
+    handleTypingIndicator(data) {
+        const typingIndicator = document.getElementById('typing-indicator');
+        
+        if (data.isTyping) {
+            const contact = this.contacts.find(c => c.id === data.userId);
+            if (contact) {
+                typingIndicator.textContent = `${contact.displayName} is typing...`;
+                typingIndicator.classList.remove('hidden');
+            }
+        } else {
+            typingIndicator.classList.add('hidden');
+        }
+    }
+    
+    handleUserStatus(data) {
+        // Update contact in list
+        const contactElement = document.querySelector(`.contact[data-id="${data.userId}"]`);
+        if (contactElement) {
+            const statusElement = contactElement.querySelector('.contact-status');
+            if (statusElement) {
+                statusElement.innerHTML = data.isOnline 
+                    ? '<span class="online-dot"></span>Online'
+                    : `Last seen ${this.formatTime(data.lastSeen)}`;
+            }
+        }
+        
+        // Update current chat header if needed
+        if (this.currentChat === data.userId) {
+            const statusElement = document.querySelector('.partner-status');
+            if (statusElement) {
+                statusElement.innerHTML = data.isOnline 
+                    ? '<span class="online-dot"></span>Online'
+                    : `Last seen ${this.formatTime(data.lastSeen)}`;
+            }
+        }
+        
+        // Update contacts array
+        const contactIndex = this.contacts.findIndex(c => c.id === data.userId);
+        if (contactIndex !== -1) {
+            this.contacts[contactIndex].isOnline = data.isOnline;
+            this.contacts[contactIndex].lastSeen = data.lastSeen;
+        }
+    }
+    
+    showNotification(message) {
+        if ('Notification' in window && Notification.permission === 'granted') {
+            const sender = message.senderId === 'ai' 
+                ? 'Bera AI' 
+                : this.contacts.find(c => c.id === message.senderId)?.displayName || 'Unknown';
+            
+            const notification = new Notification(`New message from ${sender}`, {
+                body: message.content,
+                icon: '/icon-192.png'
+            });
+            
+            notification.onclick = () => {
+                window.focus();
+                if (message.senderId !== this.currentChat) {
+                    this.selectChat(message.senderId);
+                }
+            };
+        }
+    }
+    
+    sendOfflineMessages() {
+        while (this.offlineMessages.length > 0) {
+            const message = this.offlineMessages.shift();
+            this.socket.emit('sendMessage', message);
+        }
+    }
+    
+    toggleSettings() {
+        document.querySelector('.settings-panel').classList.toggle('active');
+    }
+    
+    updateUserProfile() {
+        if (this.currentUser) {
+            document.getElementById('user-name').textContent = this.currentUser.displayName;
+            
+            const avatarElement = document.getElementById('user-avatar');
+            if (this.currentUser.profilePicture) {
+                avatarElement.src = this.currentUser.profilePicture;
+                avatarElement.style.display = 'block';
+            } else {
+                avatarElement.style.display = 'none';
+                avatarElement.parentElement.querySelector('div').textContent = this.currentUser.displayName.charAt(0).toUpperCase();
+            }
+            
+            // Update settings form
+            document.getElementById('profile-name').value = this.currentUser.displayName;
+            document.getElementById('profile-status').value = this.currentUser.status || '';
+            
+            const settingsAvatar = document.getElementById('settings-avatar');
+            if (this.currentUser.profilePicture) {
+                settingsAvatar.src = this.currentUser.profilePicture;
+            } else {
+                settingsAvatar.src = '';
+                settingsAvatar.style.display = 'none';
+            }
+        }
+    }
+    
+    async saveProfile() {
+        const displayName = document.getElementById('profile-name').value;
+        const status = document.getElementById('profile-status').value;
+        
+        try {
+            const token = localStorage.getItem('token');
+            const response = await fetch('/api/profile', {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({ displayName, status })
+            });
+            
+            if (response.ok) {
+                this.currentUser.displayName = displayName;
+                this.currentUser.status = status;
+                this.updateUserProfile();
+                this.showMessage('Profile updated successfully', 'success');
+            } else {
+                this.showMessage('Failed to update profile', 'error');
+            }
+        } catch (error) {
+            console.error('Error updating profile:', error);
+            this.showMessage('Failed to update profile', 'error');
+        }
+    }
+    
+    async handleAvatarUpload(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+        
+        // Check if file is an image
+        if (!file.type.startsWith('image/')) {
+            this.showMessage('Please select an image file', 'error');
+            return;
+        }
+        
+        // Check file size (max 2MB)
+        if (file.size > 2 * 1024 * 1024) {
+            this.showMessage('Image must be less than 2MB', 'error');
+            return;
+        }
+        
+        // Read file as data URL
+        const reader = new FileReader();
+        reader.onload = async (event) => {
+            const profilePicture = event.target.result;
+            
             try {
                 const token = localStorage.getItem('token');
-                const response = await fetch(`/api/message/${messageId}`, {
+                const response = await fetch('/api/profile', {
                     method: 'PUT',
                     headers: {
                         'Content-Type': 'application/json',
                         'Authorization': `Bearer ${token}`
                     },
-                    body: JSON.stringify({ content: newContent })
+                    body: JSON.stringify({ profilePicture })
                 });
                 
                 if (response.ok) {
-                    // Message updated successfully
-                    message.content = newContent;
-                    message.isEdited = true;
-                    message.editedAt = new Date();
-                    this.renderMessages();
+                    this.currentUser.profilePicture = profilePicture;
+                    this.updateUserProfile();
+                    this.showMessage('Profile picture updated successfully', 'success');
                 } else {
-                    alert('Failed to edit message.');
+                    this.showMessage('Failed to update profile picture', 'error');
                 }
             } catch (error) {
-                console.error('Error editing message:', error);
-                alert('Failed to edit message.');
+                console.error('Error updating profile picture:', error);
+                this.showMessage('Failed to update profile picture', 'error');
             }
-        }
+        };
+        
+        reader.readAsDataURL(file);
     }
     
-    async deleteMessage(messageId) {
-        if (!confirm('Delete this message? Choose an option:')) return;
+    loadUserSettings() {
+        const theme = localStorage.getItem('theme') || 'light';
+        document.getElementById('theme-select').value = theme;
+        this.changeTheme(theme);
         
-        const deleteForEveryone = confirm('Delete for everyone? Click OK for everyone, Cancel for just yourself.');
+        // Load AI settings
+        this.loadAISettings();
+    }
+    
+    changeTheme(theme) {
+        this.theme = theme;
+        localStorage.setItem('theme', theme);
         
+        document.documentElement.setAttribute('data-theme', theme);
+        document.getElementById('theme-select').value = theme;
+    }
+    
+    async loadAISettings() {
         try {
             const token = localStorage.getItem('token');
-            const response = await fetch(`/api/message/${messageId}?deleteForEveryone=${deleteForEveryone}`, {
-                method: 'DELETE',
+            const response = await fetch('/api/ai/conversation', {
                 headers: {
                     'Authorization': `Bearer ${token}`
                 }
             });
             
             if (response.ok) {
-                if (deleteForEveryone) {
-                    // Remove from UI
-                    this.messages = this.messages.filter(m => m._id !== messageId);
-                    this.renderMessages();
-                } else {
-                    // Just hide from current user
-                    const message = this.messages.find(m => m._id === messageId);
-                    if (message) {
-                        message.deletedFor = message.deletedFor || [];
-                        message.deletedFor.push(this.currentUser.id);
-                        this.renderMessages();
-                    }
-                }
-            } else {
-                alert('Failed to delete message.');
+                const conversation = await response.json();
+                document.getElementById('ai-personality').value = conversation.personality || 'friendly';
             }
         } catch (error) {
-            console.error('Error deleting message:', error);
-            alert('Failed to delete message.');
+            console.error('Error loading AI settings:', error);
         }
     }
     
-    updateEditedMessage(data) {
-        const message = this.messages.find(m => m._id === data.messageId);
-        if (message) {
-            message.content = data.content;
-            message.isEdited = data.isEdited;
-            message.editedAt = data.editedAt;
-            this.renderMessages();
-        }
-    }
-    
-    removeMessage(messageId) {
-        this.messages = this.messages.filter(m => m._id !== messageId);
-        this.renderMessages();
-    }
-    
-    async saveProfile() {
+    async saveAISettings() {
+        const personality = document.getElementById('ai-personality').value;
+        
         try {
-            const formData = new FormData();
-            formData.append('displayName', document.getElementById('profile-name').value);
-            formData.append('status', document.getElementById('profile-status').value);
-            formData.append('privacy[lastSeen]', document.getElementById('last-seen-setting').value);
-            formData.append('privacy[readReceipts]', document.getElementById('read-receipts-setting').checked);
-            formData.append('aiSettings[name]', document.getElementById('ai-name').value);
-            formData.append('aiSettings[personality]', document.getElementById('ai-personality').value);
-            
-            const theme = document.querySelector('input[name="theme"]:checked').value;
-            formData.append('theme', theme);
-            
-            const avatarInput = document.getElementById('avatar-input');
-            if (avatarInput.files[0]) {
-                formData.append('profilePicture', avatarInput.files[0]);
-            }
-            
             const token = localStorage.getItem('token');
-            const response = await fetch('/api/user', {
+            const response = await fetch('/api/ai/personality', {
                 method: 'PUT',
                 headers: {
+                    'Content-Type': 'application/json',
                     'Authorization': `Bearer ${token}`
                 },
-                body: formData
+                body: JSON.stringify({ personality })
             });
             
             if (response.ok) {
-                const updatedUser = await response.json();
-                this.currentUser = updatedUser;
-                
-                // Update UI
-                document.getElementById('user-name').textContent = updatedUser.displayName;
-                document.getElementById('user-avatar').src = updatedUser.profilePicture || '/default-avatar.png';
-                document.getElementById('settings-avatar').src = updatedUser.profilePicture || '/default-avatar.png';
-                
-                // Apply theme
-                document.documentElement.setAttribute('data-theme', updatedUser.theme || 'light');
-                
-                alert('Profile updated successfully!');
+                this.showMessage('AI settings updated successfully', 'success');
             } else {
-                alert('Failed to update profile.');
+                this.showMessage('Failed to update AI settings', 'error');
             }
         } catch (error) {
-            console.error('Error updating profile:', error);
-            alert('Failed to update profile.');
+            console.error('Error updating AI settings:', error);
+            this.showMessage('Failed to update AI settings', 'error');
         }
     }
     
-    async adminLogin() {
+    showAdminLogin() {
+        document.getElementById('admin-modal').classList.add('active');
+    }
+    
+    hideAdminLogin() {
+        document.getElementById('admin-modal').classList.remove('active');
+    }
+    
+    async handleAdminLogin() {
         const password = document.getElementById('admin-password').value;
         
         try {
@@ -763,166 +987,401 @@ class NovaChat {
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({ password })
+                body: JSON.stringify({ adminPassword: password })
             });
             
-            const data = await response.json();
-            
             if (response.ok) {
-                localStorage.setItem('adminToken', data.token);
-                this.showAdminScreen();
+                this.hideAdminLogin();
+                this.showAdminDashboard();
             } else {
-                document.getElementById('admin-error').textContent = data.error;
+                this.showMessage('Invalid admin password', 'error');
             }
         } catch (error) {
-            document.getElementById('admin-error').textContent = 'Admin login failed.';
+            console.error('Admin login error:', error);
+            this.showMessage('Admin login failed', 'error');
         }
     }
     
-    async loadAdminStats() {
-        try {
-            const token = localStorage.getItem('adminToken');
-            const response = await fetch('/api/admin/stats', {
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                }
-            });
-            
-            if (response.ok) {
-                const stats = await response.json();
-                document.getElementById('total-users').textContent = stats.totalUsers;
-                document.getElementById('total-messages').textContent = stats.totalMessages;
-                document.getElementById('active-users').textContent = stats.activeUsers;
-            }
-        } catch (error) {
-            console.error('Failed to load admin stats:', error);
-        }
-    }
-    
-    async loadUsersList() {
-        try {
-            const token = localStorage.getItem('adminToken');
-            const response = await fetch('/api/users', {
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                }
-            });
-            
-            if (response.ok) {
-                const users = await response.json();
-                this.renderUsersTable(users);
-            }
-        } catch (error) {
-            console.error('Failed to load users list:', error);
-        }
-    }
-    
-    renderUsersTable(users) {
-        const tableBody = document.getElementById('users-table-body');
-        tableBody.innerHTML = '';
+    switchAdminTab(tab) {
+        document.querySelectorAll('.admin-nav-btn').forEach(button => button.classList.remove('active'));
+        document.querySelectorAll('.admin-tab').forEach(tab => tab.classList.remove('active'));
         
-        users.forEach(user => {
-            const row = document.createElement('tr');
+        document.querySelector(`[data-tab="${tab}"]`).classList.add('active');
+        document.getElementById(`${tab}-tab`).classList.add('active');
+    }
+    
+    async loadAdminData() {
+        try {
+            const token = localStorage.getItem('token');
+            const response = await fetch('/api/admin/analytics', {
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Admin-Password': document.getElementById('admin-password').value
+                }
+            });
             
-            row.innerHTML = `
-                <td>${user.displayName}</td>
-                <td>${user.email}</td>
-                <td>${user.isOnline ? 'Online' : 'Offline'}</td>
-                <td>${this.formatLastSeen(user.lastSeen)}</td>
-                <td>
-                    ${!user.isBanned ? `
-                        <button class="ban-btn" data-id="${user._id}">Ban</button>
-                    ` : 'Banned'}
-                </td>
-            `;
-            
-            tableBody.appendChild(row);
-            
-            // Add event listener for ban button
-            if (!user.isBanned) {
-                const banBtn = row.querySelector('.ban-btn');
-                banBtn.addEventListener('click', () => {
-                    this.banUser(user._id);
-                });
+            if (response.ok) {
+                const data = await response.json();
+                this.renderAdminData(data);
+            } else {
+                this.showMessage('Failed to load admin data', 'error');
+            }
+        } catch (error) {
+            console.error('Error loading admin data:', error);
+            this.showMessage('Failed to load admin data', 'error');
+        }
+    }
+    
+    renderAdminData(data) {
+        // Update stats
+        document.getElementById('total-users').textContent = data.totalUsers;
+        document.getElementById('total-messages').textContent = data.totalMessages;
+        document.getElementById('active-users').textContent = data.activeUsers;
+        document.getElementById('active-connections').textContent = data.activeConnections;
+        
+        // Render charts
+        this.renderMessagesChart(data.messagesByDay);
+        this.renderActivityChart(data.peakHours);
+        
+        // TODO: Render other admin data (users, moderation, monitoring, system health)
+    }
+    
+    renderMessagesChart(messagesByDay) {
+        const ctx = document.getElementById('messages-chart').getContext('2d');
+        
+        const labels = messagesByDay.map(item => item._id);
+        const data = messagesByDay.map(item => item.count);
+        
+        new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Messages',
+                    data: data,
+                    backgroundColor: '#128C7E',
+                    borderColor: '#075E54',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
             }
         });
     }
     
-    async banUser(userId) {
-        if (!confirm('Are you sure you want to ban this user?')) return;
+    renderActivityChart(peakHours) {
+        const ctx = document.getElementById('activity-chart').getContext('2d');
         
+        const labels = peakHours.map(item => `${item.hour}:00`);
+        const data = peakHours.map(item => item.count);
+        
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Messages per hour',
+                    data: data,
+                    backgroundColor: 'rgba(18, 140, 126, 0.2)',
+                    borderColor: '#128C7E',
+                    borderWidth: 2,
+                    fill: true,
+                    tension: 0.4
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+    }
+    
+    toggleEmojiPicker() {
+        const emojiPicker = document.getElementById('emoji-picker');
+        if (emojiPicker.classList.contains('hidden')) {
+            this.showEmojiPicker();
+        } else {
+            this.hideEmojiPicker();
+        }
+    }
+    
+    showEmojiPicker() {
+        const emojiPicker = document.getElementById('emoji-picker');
+        emojiPicker.classList.remove('hidden');
+        
+        // TODO: Load emojis into the picker
+        // This is a simplified version - in a real app, you'd use a proper emoji library
+        emojiPicker.innerHTML = `
+            <div class="emoji-category">
+                <h4>Smileys & People</h4>
+                <div class="emoji-grid">
+                    <span class="emoji">😀</span>
+                    <span class="emoji">😃</span>
+                    <span class="emoji">😄</span>
+                    <span class="emoji">😁</span>
+                    <span class="emoji">😆</span>
+                    <span class="emoji">😅</span>
+                    <span class="emoji">😂</span>
+                    <span class="emoji">🤣</span>
+                    <span class="emoji">😊</span>
+                    <span class="emoji">😇</span>
+                    <span class="emoji">🙂</span>
+                    <span class="emoji">🙃</span>
+                    <span class="emoji">😉</span>
+                    <span class="emoji">😌</span>
+                    <span class="emoji">😍</span>
+                    <span class="emoji">🥰</span>
+                    <span class="emoji">😘</span>
+                    <span class="emoji">😗</span>
+                    <span class="emoji">😙</span>
+                    <span class="emoji">😚</span>
+                    <span class="emoji">😋</span>
+                    <span class="emoji">😛</span>
+                    <span class="emoji">😝</span>
+                    <span class="emoji">😜</span>
+                    <span class="emoji">🤪</span>
+                    <span class="emoji">🤨</span>
+                    <span class="emoji">🧐</span>
+                    <span class="emoji">🤓</span>
+                    <span class="emoji">😎</span>
+                    <span class="emoji">🤩</span>
+                    <span class="emoji">🥳</span>
+                </div>
+            </div>
+        `;
+        
+        // Add emoji click handlers
+        emojiPicker.querySelectorAll('.emoji').forEach(emoji => {
+            emoji.addEventListener('click', () => {
+                this.insertEmoji(emoji.textContent);
+                this.hideEmojiPicker();
+            });
+        });
+    }
+    
+    hideEmojiPicker() {
+        document.getElementById('emoji-picker').classList.add('hidden');
+    }
+    
+    insertEmoji(emoji) {
+        const input = document.getElementById('message-input');
+        input.value += emoji;
+        input.focus();
+    }
+    
+    toggleAttachmentMenu() {
+        const attachmentMenu = document.getElementById('attachment-menu');
+        if (attachmentMenu.classList.contains('hidden')) {
+            this.showAttachmentMenu();
+        } else {
+            this.hideAttachmentMenu();
+        }
+    }
+    
+    showAttachmentMenu() {
+        const attachmentMenu = document.getElementById('attachment-menu');
+        attachmentMenu.classList.remove('hidden');
+    }
+    
+    hideAttachmentMenu() {
+        document.getElementById('attachment-menu').classList.add('hidden');
+    }
+    
+    showContextMenu(e, messageId) {
+        const contextMenu = document.getElementById('message-context-menu');
+        contextMenu.classList.remove('hidden');
+        
+        // Position the context menu
+        contextMenu.style.top = `${e.pageY}px`;
+        contextMenu.style.left = `${e.pageX}px`;
+        
+        // Store the message ID for context menu actions
+        contextMenu.dataset.messageId = messageId;
+        
+        // Add event listeners to context menu buttons
+        contextMenu.querySelectorAll('button').forEach(button => {
+            button.onclick = (event) => {
+                event.stopPropagation();
+                this.handleContextMenuAction(button.dataset.action, messageId);
+                this.hideContextMenu();
+            };
+        });
+    }
+    
+    hideContextMenu() {
+        document.getElementById('message-context-menu').classList.add('hidden');
+    }
+    
+    handleContextMenuAction(action, messageId) {
+        const message = this.findMessageById(messageId);
+        if (!message) return;
+        
+        switch (action) {
+            case 'reply':
+                this.replyToMessage(message);
+                break;
+            case 'edit':
+                this.editMessage(message);
+                break;
+            case 'delete':
+                this.deleteMessage(messageId, false);
+                break;
+            case 'deleteEveryone':
+                this.deleteMessage(messageId, true);
+                break;
+            case 'forward':
+                this.forwardMessage(message);
+                break;
+        }
+    }
+    
+    findMessageById(messageId) {
+        for (const [chatId, messages] of this.messages) {
+            const message = messages.find(m => m._id === messageId);
+            if (message) return message;
+        }
+        return null;
+    }
+    
+    replyToMessage(message) {
+        const input = document.getElementById('message-input');
+        input.value = `Replying to: ${message.content}\n`;
+        input.focus();
+    }
+    
+    editMessage(message) {
+        if (message.senderId !== this.currentUser.id) return;
+        
+        const input = document.getElementById('message-input');
+        input.value = message.content;
+        input.focus();
+        
+        // Store the message ID being edited
+        input.dataset.editingMessageId = message._id;
+        
+        // Change send button to edit button
+        const sendButton = document.getElementById('send-btn');
+        sendButton.textContent = '✏️';
+        sendButton.onclick = () => this.finishEditMessage(message._id, input.value);
+    }
+    
+    finishEditMessage(messageId, newContent) {
+        this.socket.emit('editMessage', {
+            messageId,
+            newContent
+        });
+        
+        // Reset UI
+        const input = document.getElementById('message-input');
+        input.value = '';
+        delete input.dataset.editingMessageId;
+        
+        const sendButton = document.getElementById('send-btn');
+        sendButton.textContent = '➤';
+        sendButton.onclick = () => this.sendMessage();
+    }
+    
+    deleteMessage(messageId, forEveryone) {
+        this.socket.emit('deleteMessage', {
+            messageId,
+            forEveryone
+        });
+    }
+    
+    forwardMessage(message) {
+        // TODO: Implement message forwarding
+        this.showMessage('Message forwarding not implemented yet', 'warning');
+    }
+    
+    async handleLogout() {
         try {
-            const token = localStorage.getItem('adminToken');
-            const response = await fetch(`/api/admin/ban/${userId}`, {
+            const token = localStorage.getItem('token');
+            await fetch('/api/logout', {
                 method: 'POST',
                 headers: {
                     'Authorization': `Bearer ${token}`
                 }
             });
-            
-            if (response.ok) {
-                alert('User banned successfully.');
-                this.loadUsersList();
-            } else {
-                alert('Failed to ban user.');
-            }
         } catch (error) {
-            console.error('Error banning user:', error);
-            alert('Failed to ban user.');
+            console.error('Logout error:', error);
+        } finally {
+            localStorage.removeItem('token');
+            this.currentUser = null;
+            
+            if (this.socket) {
+                this.socket.disconnect();
+                this.socket = null;
+            }
+            
+            this.showAuthScreen();
         }
     }
     
-    logout() {
-        localStorage.removeItem('token');
-        localStorage.removeItem('adminToken');
+    filterContacts(query) {
+        const contacts = document.querySelectorAll('.contact');
+        contacts.forEach(contact => {
+            const name = contact.querySelector('.contact-name').textContent.toLowerCase();
+            if (name.includes(query.toLowerCase())) {
+                contact.style.display = 'flex';
+            } else {
+                contact.style.display = 'none';
+            }
+        });
+    }
+    
+    showMessage(message, type) {
+        const messageElement = document.getElementById('auth-message');
+        messageElement.textContent = message;
+        messageElement.className = `message ${type}`;
         
-        if (this.socket) {
-            this.socket.disconnect();
-        }
-        
-        this.currentUser = null;
-        this.currentChat = null;
-        this.messages = [];
-        this.contacts = [];
-        
-        this.showAuthScreen();
+        // Auto hide after 3 seconds
+        setTimeout(() => {
+            messageElement.textContent = '';
+            messageElement.className = 'message';
+        }, 3000);
     }
     
     formatTime(timestamp) {
         const date = new Date(timestamp);
-        return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-    }
-    
-    formatLastSeen(timestamp) {
-        if (!timestamp) return 'Never';
-        
         const now = new Date();
-        const lastSeen = new Date(timestamp);
-        const diffMs = now - lastSeen;
-        const diffMins = Math.floor(diffMs / 60000);
-        const diffHours = Math.floor(diffMs / 3600000);
-        const diffDays = Math.floor(diffMs / 86400000);
+        const diff = now - date;
         
-        if (diffMins < 1) return 'Just now';
-        if (diffMins < 60) return `${diffMins} min ago`;
-        if (diffHours < 24) return `${diffHours} hr ago`;
-        if (diffDays < 7) return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
-        
-        return lastSeen.toLocaleDateString();
+        if (diff < 60000) { // Less than 1 minute
+            return 'just now';
+        } else if (diff < 3600000) { // Less than 1 hour
+            const minutes = Math.floor(diff / 60000);
+            return `${minutes} min ago`;
+        } else if (diff < 86400000) { // Less than 1 day
+            const hours = Math.floor(diff / 3600000);
+            return `${hours} hr ago`;
+        } else if (diff < 604800000) { // Less than 1 week
+            const days = Math.floor(diff / 86400000);
+            return `${days} day${days > 1 ? 's' : ''} ago`;
+        } else {
+            return date.toLocaleDateString();
+        }
     }
     
-    registerServiceWorker() {
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('/service-worker.js')
-                .then(registration => {
-                    console.log('SW registered: ', registration);
-                })
-                .catch(registrationError => {
-                    console.log('SW registration failed: ', registrationError);
-                });
-            });
-        }
+    formatFileSize(bytes) {
+        if (bytes < 1024) return `${bytes} B`;
+        if (bytes < 1048576) return `${(bytes / 1024).toFixed(1)} KB`;
+        return `${(bytes / 1048576).toFixed(1)} MB`;
+    }
+    
+    escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
     }
 }
 
