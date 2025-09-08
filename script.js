@@ -264,40 +264,46 @@ class NovaChat {
     }
     
     async handleRegister(e) {
-        e.preventDefault();
-        const displayName = document.getElementById('register-name').value;
-        const email = document.getElementById('register-email').value;
-        const password = document.getElementById('register-password').value;
-        const confirmPassword = document.getElementById('register-confirm').value;
-        
-        if (password !== confirmPassword) {
-            this.showMessage('Passwords do not match', 'error');
-            return;
-        }
-        
-        try {
-            const response = await fetch('/api/register', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ email, password, displayName })
-            });
-            
-            const data = await response.json();
-            
-            if (response.ok) {
-                this.showMessage('Registration successful. Please login.', 'success');
-                this.switchAuthTab('login');
-            } else {
-                this.showMessage(data.error, 'error');
-            }
-        } catch (error) {
-            console.error('Registration error:', error);
-            this.showMessage('Registration failed. Please try again.', 'error');
-        }
-    }
+  e.preventDefault();
+  const displayName = document.getElementById('register-name').value;
+  const email = document.getElementById('register-email').value;
+  const password = document.getElementById('register-password').value;
+  const confirmPassword = document.getElementById('register-confirm').value;
+  
+  if (password !== confirmPassword) {
+    this.showMessage('Passwords do not match', 'error');
+    return;
+  }
+  
+  if (password.length < 6) {
+    this.showMessage('Password must be at least 6 characters', 'error');
+    return;
+  }
+  
+  try {
+    const response = await fetch('/api/register', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ email, password, displayName })
+    });
     
+    const data = await response.json();
+    
+    if (response.ok) {
+      this.showMessage('Registration successful. Please login.', 'success');
+      this.switchAuthTab('login');
+      // Clear form
+      document.getElementById('register-form').reset();
+    } else {
+      this.showMessage(data.error || 'Registration failed', 'error');
+    }
+  } catch (error) {
+    console.error('Registration error:', error);
+    this.showMessage('Registration failed. Please try again.', 'error');
+  }
+}    
     switchAuthTab(tab) {
         document.querySelectorAll('.auth-form').forEach(form => form.classList.remove('active'));
         document.querySelectorAll('.tab-button').forEach(button => button.classList.remove('active'));
