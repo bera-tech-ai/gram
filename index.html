@@ -1,392 +1,111 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NovaChat</title>
-    <link rel="stylesheet" href="style.css">
-    <link rel="manifest" href="manifest.json">
-    <link rel="icon" type="image/x-icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>💬</text></svg>">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Neon API Dashboard</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Orbitron', sans-serif;
+      background: #0a0a0a;
+      color: #00fff7;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      min-height: 100vh;
+      padding: 30px;
+    }
+
+    h1 {
+      font-size: 2.5rem;
+      color: #00f5ff;
+      text-shadow: 0 0 10px #00f5ff, 0 0 20px #00e0ff;
+      margin-bottom: 20px;
+    }
+
+    .card {
+      background: rgba(20, 20, 20, 0.85);
+      border: 2px solid #00f5ff;
+      border-radius: 15px;
+      padding: 20px;
+      max-width: 600px;
+      width: 100%;
+      box-shadow: 0 0 20px #00f5ff77;
+    }
+
+    input {
+      width: 100%;
+      padding: 12px;
+      border: none;
+      border-radius: 8px;
+      font-size: 1rem;
+      margin-bottom: 15px;
+      outline: none;
+      background: #111;
+      color: #0ff;
+      box-shadow: 0 0 10px #00f5ff66 inset;
+    }
+
+    button {
+      width: 100%;
+      padding: 12px;
+      font-size: 1rem;
+      font-weight: bold;
+      color: black;
+      background: #00f5ff;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: 0.2s;
+    }
+
+    button:hover {
+      background: #0ff;
+      box-shadow: 0 0 15px #00f5ff;
+    }
+
+    pre {
+      background: #050505;
+      padding: 15px;
+      border-radius: 10px;
+      color: #0ff;
+      font-family: monospace;
+      font-size: 0.9rem;
+      overflow-x: auto;
+      box-shadow: 0 0 10px #00f5ff55 inset;
+    }
+  </style>
 </head>
 <body>
-    <div id="app">
-        <!-- Auth Screen -->
-        <div id="auth-screen" class="screen active">
-            <div class="auth-container">
-                <h1>NovaChat</h1>
-                <p>Connect with friends and Bera AI assistant</p>
-                
-                <div class="auth-tabs">
-                    <button class="tab-button active" data-tab="login">Login</button>
-                    <button class="tab-button" data-tab="register">Register</button>
-                </div>
-                
-                <form id="login-form" class="auth-form active">
-                    <div class="input-group">
-                        <label for="login-email">Email</label>
-                        <input type="email" id="login-email" required>
-                    </div>
-                    <div class="input-group">
-                        <label for="login-password">Password</label>
-                        <input type="password" id="login-password" required>
-                    </div>
-                    <button type="submit">Login</button>
-                </form>
-                
-                <form id="register-form" class="auth-form">
-                    <div class="input-group">
-                        <label for="register-name">Display Name</label>
-                        <input type="text" id="register-name" required>
-                    </div>
-                    <div class="input-group">
-                        <label for="register-email">Email</label>
-                        <input type="email" id="register-email" required>
-                    </div>
-                    <div class="input-group">
-                        <label for="register-password">Password</label>
-                        <input type="password" id="register-password" required>
-                    </div>
-                    <div class="input-group">
-                        <label for="register-confirm">Confirm Password</label>
-                        <input type="password" id="register-confirm" required>
-                    </div>
-                    <button type="submit">Register</button>
-                </form>
-                
-                <div id="auth-message" class="message"></div>
-            </div>
-        </div>
-        
-        <!-- Main Chat Screen -->
-        <div id="chat-screen" class="screen">
-            <div class="chat-container">
-                <!-- Sidebar -->
-                <div class="sidebar">
-                    <div class="sidebar-header">
-                        <div class="user-profile">
-                            <img id="user-avatar" src="" alt="Profile">
-                            <span id="user-name"></span>
-                        </div>
-                        <div class="sidebar-actions">
-                            <button id="new-chat-btn" title="New Chat">💬</button>
-                            <button id="menu-btn" title="Menu">⋮</button>
-                        </div>
-                    </div>
-                    
-                    <div class="search-container">
-                        <input type="text" id="search-contacts" placeholder="Search contacts...">
-                    </div>
-                    
-                    <div class="contacts-list">
-                        <div class="contact ai-contact" data-id="ai">
-                            <div class="contact-avatar">🤖</div>
-                            <div class="contact-info">
-                                <div class="contact-name">Bera AI</div>
-                                <div class="contact-status">AI Assistant</div>
-                            </div>
-                        </div>
-                        <!-- Contacts will be loaded here -->
-                    </div>
-                </div>
-                
-                <!-- Chat Area -->
-                <div class="chat-area">
-                    <div class="chat-header">
-                        <div class="chat-partner">
-                            <div class="partner-avatar"></div>
-                            <div class="partner-info">
-                                <div class="partner-name">Select a chat</div>
-                                <div class="partner-status"></div>
-                            </div>
-                        </div>
-                        <div class="chat-actions">
-                            <button id="call-btn" title="Call" disabled>📞</button>
-                            <button id="video-call-btn" title="Video Call" disabled>🎥</button>
-                            <button id="chat-menu-btn" title="More">⋮</button>
-                        </div>
-                    </div>
-                    
-                    <div class="messages-container">
-                        <div class="no-chat-selected">
-                            <p>Select a contact to start chatting</p>
-                        </div>
-                        <!-- Messages will be loaded here -->
-                    </div>
-                    
-                    <div class="message-input-container">
-                        <div class="message-input-actions">
-                            <button id="emoji-btn" title="Emoji">😊</button>
-                            <button id="attach-btn" title="Attach">📎</button>
-                        </div>
-                        <div class="message-input-wrapper">
-                            <input type="text" id="message-input" placeholder="Type a message..." disabled>
-                            <div id="typing-indicator" class="hidden">is typing...</div>
-                        </div>
-                        <button id="send-btn" disabled>➤</button>
-                    </div>
-                </div>
-                
-                <!-- Settings Panel -->
-                <div class="settings-panel">
-                    <div class="settings-header">
-                        <h2>Settings</h2>
-                        <button id="close-settings">✕</button>
-                    </div>
-                    
-                    <div class="settings-content">
-                        <div class="settings-section">
-                            <h3>Profile</h3>
-                            <div class="profile-settings">
-                                <div class="avatar-upload">
-                                    <img id="settings-avatar" src="" alt="Profile">
-                                    <input type="file" id="avatar-upload" accept="image/*">
-                                    <label for="avatar-upload">Change</label>
-                                </div>
-                                <div class="profile-fields">
-                                    <div class="input-group">
-                                        <label for="profile-name">Display Name</label>
-                                        <input type="text" id="profile-name">
-                                    </div>
-                                    <div class="input-group">
-                                        <label for="profile-status">Status</label>
-                                        <input type="text" id="profile-status" placeholder="Hey there! I'm using NovaChat">
-                                    </div>
-                                    <button id="save-profile">Save Changes</button>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="settings-section">
-                            <h3>Appearance</h3>
-                            <div class="theme-settings">
-                                <label>Theme:</label>
-                                <select id="theme-select">
-                                    <option value="light">Light</option>
-                                    <option value="dark">Dark</option>
-                                    <option value="auto">Auto (System)</option>
-                                </select>
-                            </div>
-                        </div>
-                        
-                        <div class="settings-section">
-                            <h3>Bera AI Settings</h3>
-                            <div class="ai-settings">
-                                <div class="input-group">
-                                    <label for="ai-name">Assistant Name</label>
-                                    <input type="text" id="ai-name" value="Bera AI">
-                                </div>
-                                <div class="input-group">
-                                    <label for="ai-personality">Personality</label>
-                                    <select id="ai-personality">
-                                        <option value="friendly">Friendly</option>
-                                        <option value="professional">Professional</option>
-                                        <option value="funny">Funny</option>
-                                        <option value="mentor">Mentor</option>
-                                        <option value="creative">Creative</option>
-                                    </select>
-                                </div>
-                                <button id="save-ai-settings">Save AI Settings</button>
-                            </div>
-                        </div>
-                        
-                        <div class="settings-section">
-                            <h3>Admin</h3>
-                            <div class="admin-settings">
-                                <button id="admin-login-btn">Admin Dashboard</button>
-                            </div>
-                        </div>
-                        
-                        <div class="settings-section">
-                            <button id="logout-btn" class="logout-btn">Logout</button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        
-        <!-- Admin Modal -->
-        <div id="admin-modal" class="modal">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h2>Admin Login</h2>
-                    <button class="close-modal">&times;</button>
-                </div>
-                <div class="modal-body">
-                    <div class="input-group">
-                        <label for="admin-password">Admin Password</label>
-                        <input type="password" id="admin-password" required>
-                    </div>
-                    <button id="admin-login-submit">Login</button>
-                </div>
-            </div>
-        </div>
-        
-        <!-- Admin Dashboard -->
-        <div id="admin-dashboard" class="screen">
-            <div class="admin-container">
-                <div class="admin-header">
-                    <h1>Admin Dashboard</h1>
-                    <button id="back-to-chat">Back to Chat</button>
-                </div>
-                
-                <div class="admin-nav">
-                    <button class="admin-nav-btn active" data-tab="analytics">Analytics</button>
-                    <button class="admin-nav-btn" data-tab="users">Users</button>
-                    <button class="admin-nav-btn" data-tab="moderation">Moderation</button>
-                    <button class="admin-nav-btn" data-tab="monitoring">Live Monitoring</button>
-                    <button class="admin-nav-btn" data-tab="system">System Health</button>
-                </div>
-                
-                <div class="admin-content">
-                    <div id="analytics-tab" class="admin-tab active">
-                        <h2>Analytics</h2>
-                        <div class="stats-grid">
-                            <div class="stat-card">
-                                <h3>Total Users</h3>
-                                <p id="total-users">0</p>
-                            </div>
-                            <div class="stat-card">
-                                <h3>Total Messages</h3>
-                                <p id="total-messages">0</p>
-                            </div>
-                            <div class="stat-card">
-                                <h3>Active Users</h3>
-                                <p id="active-users">0</p>
-                            </div>
-                            <div class="stat-card">
-                                <h3>Active Connections</h3>
-                                <p id="active-connections">0</p>
-                            </div>
-                        </div>
-                        
-                        <div class="chart-container">
-                            <h3>Messages by Day (Last 7 days)</h3>
-                            <canvas id="messages-chart" width="400" height="200"></canvas>
-                        </div>
-                        
-                        <div class="chart-container">
-                            <h3>Peak Activity Hours</h3>
-                            <canvas id="activity-chart" width="400" height="200"></canvas>
-                        </div>
-                    </div>
-                    
-                    <div id="users-tab" class="admin-tab">
-                        <h2>User Management</h2>
-                        <table class="users-table">
-                            <thead>
-                                <tr>
-                                    <th>ID</th>
-                                    <th>Name</th>
-                                    <th>Email</th>
-                                    <th>Status</th>
-                                    <th>Last Seen</th>
-                                    <th>Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody id="users-table-body">
-                                <!-- Users will be loaded here -->
-                            </tbody>
-                        </table>
-                    </div>
-                    
-                    <div id="moderation-tab" class="admin-tab">
-                        <h2>Message Moderation</h2>
-                        <div class="moderation-tools">
-                            <div class="input-group">
-                                <label for="keyword-filter">Keyword Filter</label>
-                                <input type="text" id="keyword-filter" placeholder="Enter keywords separated by commas">
-                                <button id="apply-filter">Apply Filter</button>
-                            </div>
-                            
-                            <div class="flagged-messages">
-                                <h3>Flagged Messages</h3>
-                                <div id="flagged-messages-list">
-                                    <!-- Flagged messages will be loaded here -->
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div id="monitoring-tab" class="admin-tab">
-                        <h2>Live Monitoring</h2>
-                        <div class="monitoring-container">
-                            <h3>Active Connections</h3>
-                            <table class="connections-table">
-                                <thead>
-                                    <tr>
-                                        <th>Socket ID</th>
-                                        <th>User ID</th>
-                                        <th>Connected At</th>
-                                        <th>Duration</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="connections-table-body">
-                                    <!-- Connections will be loaded here -->
-                                </tbody>
-                            </table>
-                            
-                            <h3>Real-time Message Feed</h3>
-                            <div id="message-feed">
-                                <!-- Message feed will be loaded here -->
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div id="system-tab" class="admin-tab">
-                        <h2>System Health</h2>
-                        <div class="system-stats">
-                            <div class="stat-card">
-                                <h3>CPU Usage</h3>
-                                <p id="cpu-usage">N/A</p>
-                            </div>
-                            <div class="stat-card">
-                                <h3>Memory Usage</h3>
-                                <p id="memory-usage">N/A</p>
-                            </div>
-                            <div class="stat-card">
-                                <h3>Uptime</h3>
-                                <p id="system-uptime">N/A</p>
-                            </div>
-                            <div class="stat-card">
-                                <h3>DB Latency</h3>
-                                <p id="db-latency">N/A</p>
-                            </div>
-                        </div>
-                        
-                        <div class="error-log">
-                            <h3>Error Log</h3>
-                            <div id="error-log-content">
-                                <!-- Error log will be loaded here -->
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
+  <h1>⚡ Neon API Dashboard</h1>
+  <div class="card">
+    <input id="query" type="text" placeholder="Type your question..." />
+    <button onclick="sendQuery()">Ask API</button>
+    <pre id="response">Waiting for response...</pre>
+  </div>
 
-    <!-- Emoji Picker (will be implemented in script) -->
-    <div id="emoji-picker" class="emoji-picker hidden"></div>
+  <script>
+    async function sendQuery() {
+      const q = document.getElementById("query").value;
+      const resEl = document.getElementById("response");
 
-    <!-- Attachment Menu -->
-    <div id="attachment-menu" class="attachment-menu hidden">
-        <button data-type="image">📷 Image</button>
-        <button data-type="video">🎥 Video</button>
-        <button data-type="audio">🎤 Audio</button>
-        <button data-type="document">📄 Document</button>
-    </div>
+      if (!q) {
+        resEl.textContent = "⚠️ Please enter a question first.";
+        return;
+      }
 
-    <!-- Context Menu for Messages -->
-    <div id="message-context-menu" class="context-menu hidden">
-        <button data-action="reply">Reply</button>
-        <button data-action="edit">Edit</button>
-        <button data-action="delete">Delete for me</button>
-        <button data-action="deleteEveryone">Delete for everyone</button>
-        <button data-action="forward">Forward</button>
-    </div>
+      resEl.textContent = "⏳ Loading...";
 
-    <script src="/socket.io/socket.io.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="script.js"></script>
+      try {
+        const res = await fetch(`/chat?q=${encodeURIComponent(q)}`);
+        const data = await res.json();
+        resEl.textContent = JSON.stringify(data, null, 2);
+      } catch (err) {
+        resEl.textContent = "❌ Error: " + err.message;
+      }
+    }
+  </script>
 </body>
-                    </html>
+</html>
