@@ -10,22 +10,21 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Setup OpenAI client
+// ⚠️ Hardcoded API key (unsafe in production!)
 const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY, // Store this in Render's environment vars
+  apiKey: "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",
 });
 
 // Middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Serve static dashboard
+// Serve static files from "public"
 app.use(express.static(path.join(__dirname, "public")));
 
-// API endpoint that talks to OpenAI
+// /chat endpoint
 app.get("/chat", async (req, res) => {
   const q = req.query.q;
-
   if (!q) {
     return res.status(400).json({
       creator: "Bruce Bera",
@@ -37,7 +36,7 @@ app.get("/chat", async (req, res) => {
 
   try {
     const completion = await openai.chat.completions.create({
-      model: "gpt-4o-mini", // or gpt-4o, gpt-3.5-turbo, etc.
+      model: "gpt-4o-mini",
       messages: [{ role: "user", content: q }],
     });
 
@@ -60,7 +59,7 @@ app.get("/chat", async (req, res) => {
   }
 });
 
-// Root fallback
+// Fallback route
 app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "public", "index.html"));
 });
