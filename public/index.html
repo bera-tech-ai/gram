@@ -1,246 +1,228 @@
-<!DOCTYPE html>
+<!doctype html>
+
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NovaChat</title>
-    <link rel="stylesheet" href="style.css">
-    <link rel="manifest" href="manifest.json">
-    <link rel="icon" type="image/png" href="/icon-192.png">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Bruce Bera — Neon API Tester</title>
+  <style>
+    /* -------------------- Root / Reset -------------------- */
+    :root{
+      --bg:#000006;
+      --panel:#071022;
+      --glow-c1: #00fff7; /* cyan */
+      --glow-c2: #ff3ec6; /* magenta */
+      --glow-c3: #7a5cff; /* purple */
+      --text:#dffcff;
+      --muted:#9bd2d9;
+      --success:#7cffa3;
+      --danger:#ff6b6b;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%;margin:0;font-family:Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial; background: radial-gradient(1200px 600px at 10% 10%, rgba(0,255,247,0.04), transparent), radial-gradient(900px 500px at 90% 90%, rgba(122,92,255,0.03), transparent), var(--bg); color:var(--text);}/* -------------------- Layout -------------------- */
+.wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:48px}
+.card{width:100%;max-width:1100px;background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));border-radius:18px;padding:28px;border:1px solid rgba(255,255,255,0.04);position:relative;overflow:hidden;box-shadow:0 10px 40px rgba(2,6,23,0.7)}
+
+/* Animated neon beams in background */
+.card::before, .card::after{content:"";position:absolute;inset:0;pointer-events:none}
+.card::before{background:linear-gradient(90deg, transparent, rgba(0,255,247,0.04), transparent);transform:skewX(-12deg) translateX(-25%);filter:blur(20px);animation:slide 8s linear infinite}
+.card::after{background:linear-gradient(120deg, transparent, rgba(122,92,255,0.03), transparent);transform:skewX(8deg) translateX(20%);filter:blur(30px);animation:slide 12s linear infinite reverse}
+@keyframes slide{from{transform:translateX(-30%) skewX(-12deg)} to{transform:translateX(30%) skewX(-12deg)}}
+
+/* Header */
+.hdr{display:flex;gap:16px;align-items:center;margin-bottom:18px}
+.logo{width:62px;height:62px;border-radius:12px;background:linear-gradient(135deg,var(--glow-c1),var(--glow-c2));display:flex;align-items:center;justify-content:center;color:#001; font-weight:800; font-size:20px;box-shadow:0 6px 30px rgba(0,255,247,0.12), 0 0 30px rgba(255,62,198,0.06)}
+.title{font-size:20px;font-weight:700;line-height:1}
+.subtitle{font-size:12px;color:var(--muted);margin-top:4px}
+
+/* Grid */
+.grid{display:grid;grid-template-columns:1fr 420px;gap:20px}
+
+/* Left panel - controls */
+.panel{background:linear-gradient(180deg, rgba(255,255,255,0.015), rgba(255,255,255,0.01));padding:18px;border-radius:12px;border:1px solid rgba(0,255,247,0.06)}
+.label{font-size:12px;color:var(--muted);margin-bottom:8px}
+.input{width:100%;padding:12px;border-radius:10px;border:1px solid rgba(255,255,255,0.04);background:rgba(0,0,0,0.35);color:var(--text);font-size:15px;outline:none}
+.input:focus{box-shadow:0 0 20px rgba(0,255,247,0.06);border-color:var(--glow-c1)}
+
+.row{display:flex;gap:12px;align-items:center}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:12px 14px;border-radius:10px;background:linear-gradient(90deg,var(--glow-c1),var(--glow-c2));color:#001;font-weight:700;cursor:pointer;border:none;box-shadow:0 6px 30px rgba(0,255,247,0.12)}
+.btn.ghost{background:transparent;border:1px solid rgba(255,255,255,0.04);color:var(--muted);font-weight:600}
+
+.small{font-size:13px}
+
+/* Right panel - results */
+.result{background:linear-gradient(180deg, rgba(0,0,0,0.5), rgba(0,0,0,0.45));padding:16px;border-radius:12px;border:1px solid rgba(122,92,255,0.06);min-height:300px;position:relative}
+.terminal{background:linear-gradient(180deg, rgba(0,0,0,0.6), rgba(255,255,255,0.02));padding:14px;border-radius:8px;height:100%;overflow:auto;color:var(--success);font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, 'Roboto Mono', monospace;font-size:13px}
+.meta{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+
+/* neon border highlight */
+.glow-border{position:absolute;inset:8px;border-radius:10px;pointer-events:none;border:1px solid transparent;background:linear-gradient(90deg, rgba(0,255,247,0.06), rgba(255,62,198,0.04));mix-blend-mode:screen}
+
+/* sample chips */
+.chips{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.chip{padding:8px 10px;border-radius:999px;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.03);cursor:pointer;color:var(--muted);font-size:13px}
+.chip:hover{box-shadow:0 0 10px rgba(122,92,255,0.04);color:var(--text)}
+
+/* footer */
+.foot{margin-top:14px;font-size:12px;color:var(--muted);display:flex;justify-content:space-between;align-items:center}
+
+/* responsive */
+@media (max-width:920px){.grid{grid-template-columns:1fr}.result{min-height:240px}}
+
+/* subtle scanlines in terminal */
+.terminal::before{content:"";position:absolute;left:0;right:0;top:0;bottom:0;background-image:linear-gradient(rgba(255,255,255,0.01) 1px, transparent 1px);background-size:100% 18px;opacity:0.06;pointer-events:none;border-radius:6px}
+
+/* tiny animations */
+.pulse{animation:pulse 2s infinite}
+@keyframes pulse{0%{transform:translateY(0);filter:drop-shadow(0 0 6px rgba(0,255,247,0.08))}50%{transform:translateY(-2px);filter:drop-shadow(0 0 14px rgba(255,62,198,0.08))}100%{transform:translateY(0)}}
+
+  </style>
 </head>
 <body>
-    <div id="app">
-        <!-- Auth Screen -->
-        <div id="auth-screen" class="screen active">
-            <div class="auth-container">
-                <h1>NovaChat</h1>
-                <div class="auth-tabs">
-                    <button class="tab-btn active" data-tab="login">Login</button>
-                    <button class="tab-btn" data-tab="register">Register</button>
-                </div>
-                
-                <form id="login-form" class="auth-form active">
-                    <input type="email" id="login-email" placeholder="Email" required>
-                    <input type="password" id="login-password" placeholder="Password" required>
-                    <button type="submit">Login</button>
-                </form>
-                
-                <form id="register-form" class="auth-form">
-                    <input type="text" id="register-name" placeholder="Display Name" required>
-                    <input type="email" id="register-email" placeholder="Email" required>
-                    <input type="password" id="register-password" placeholder="Password" required>
-                    <button type="submit">Register</button>
-                </form>
-                
-                <div id="auth-error" class="error-message"></div>
-            </div>
+  <div class="wrap">
+    <div class="card">
+      <div class="hdr">
+        <div class="logo">BB</div>
+        <div>
+          <div class="title">Bruce Bera — Neon API Tester</div>
+          <div class="subtitle">Check your endpoint, preview responses & share quick samples</div>
         </div>
-        
-        <!-- Main Chat Screen -->
-        <div id="chat-screen" class="screen">
-            <div class="chat-container">
-                <!-- Sidebar -->
-                <div class="sidebar">
-                    <div class="sidebar-header">
-                        <div class="user-profile">
-                            <img id="user-avatar" src="" alt="Profile">
-                            <span id="user-name"></span>
-                        </div>
-                        <div class="sidebar-actions">
-                            <button id="new-chat-btn" title="New Chat">+</button>
-                            <button id="settings-btn" title="Settings">⚙️</button>
-                        </div>
-                    </div>
-                    
-                    <div class="search-container">
-                        <input type="text" id="search-contacts" placeholder="Search contacts...">
-                    </div>
-                    
-                    <div class="contacts-list">
-                        <div class="ai-contact contact-item" data-id="ai">
-                            <img src="/ai-avatar.png" alt="Bera AI">
-                            <div class="contact-info">
-                                <span class="contact-name">Bera AI</span>
-                                <span class="contact-status">AI Assistant</span>
-                            </div>
-                        </div>
-                        <div id="contacts-container"></div>
-                    </div>
-                </div>
-                
-                <!-- Chat Area -->
-                <div class="chat-area">
-                    <div class="chat-header">
-                        <div id="current-chat-info" class="chat-info">
-                            <img id="chat-avatar" src="" alt="Contact">
-                            <div>
-                                <span id="chat-name"></span>
-                                <span id="chat-status"></span>
-                            </div>
-                        </div>
-                        <div class="chat-actions">
-                            <button id="video-call-btn" title="Video Call">📹</button>
-                            <button id="voice-call-btn" title="Voice Call">📞</button>
-                            <button id="chat-info-btn" title="Chat Info">ℹ️</button>
-                        </div>
-                    </div>
-                    
-                    <div class="messages-container">
-                        <div id="messages-list"></div>
-                    </div>
-                    
-                    <div class="typing-indicator" id="typing-indicator"></div>
-                    
-                    <div class="message-input-container">
-                        <button id="attach-btn">📎</button>
-                        <input type="text" id="message-input" placeholder="Type a message...">
-                        <button id="send-btn">➤</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-        
-        <!-- Settings Screen -->
-        <div id="settings-screen" class="screen">
-            <div class="settings-container">
-                <div class="settings-header">
-                    <button id="back-to-chat">←</button>
-                    <h2>Settings</h2>
-                </div>
-                
-                <div class="settings-content">
-                    <div class="settings-section">
-                        <h3>Profile</h3>
-                        <div class="profile-settings">
-                            <div class="avatar-upload">
-                                <img id="settings-avatar" src="" alt="Profile">
-                                <input type="file" id="avatar-input" accept="image/*">
-                                <label for="avatar-input">Change</label>
-                            </div>
-                            <input type="text" id="profile-name" placeholder="Display Name">
-                            <input type="text" id="profile-status" placeholder="Status">
-                        </div>
-                        <button id="save-profile">Save Profile</button>
-                    </div>
-                    
-                    <div class="settings-section">
-                        <h3>Privacy</h3>
-                        <div class="privacy-settings">
-                            <label>
-                                Last Seen
-                                <select id="last-seen-setting">
-                                    <option value="everyone">Everyone</option>
-                                    <option value="contacts">My Contacts</option>
-                                    <option value="nobody">Nobody</option>
-                                </select>
-                            </label>
-                            <label>
-                                <input type="checkbox" id="read-receipts-setting">
-                                Read Receipts
-                            </label>
-                        </div>
-                    </div>
-                    
-                    <div class="settings-section">
-                        <h3>Theme</h3>
-                        <div class="theme-settings">
-                            <label>
-                                <input type="radio" name="theme" value="light" checked>
-                                Light Mode
-                            </label>
-                            <label>
-                                <input type="radio" name="theme" value="dark">
-                                Dark Mode
-                            </label>
-                        </div>
-                    </div>
-                    
-                    <div class="settings-section">
-                        <h3>Bera AI Settings</h3>
-                        <div class="ai-settings">
-                            <input type="text" id="ai-name" placeholder="AI Name" value="Bera AI">
-                            <select id="ai-personality">
-                                <option value="friendly">Friendly</option>
-                                <option value="professional">Professional</option>
-                                <option value="funny">Funny</option>
-                                <option value="mentor">Mentor</option>
-                            </select>
-                        </div>
-                    </div>
-                    
-                    <div class="settings-section">
-                        <button id="admin-btn">Admin Dashboard</button>
-                        <button id="logout-btn">Logout</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-        
-        <!-- Admin Login Screen -->
-        <div id="admin-login-screen" class="screen">
-            <div class="admin-login-container">
-                <h2>Admin Login</h2>
-                <input type="password" id="admin-password" placeholder="Admin Password">
-                <button id="admin-login-btn">Login</button>
-                <button id="admin-back-btn">Back</button>
-                <div id="admin-error" class="error-message"></div>
-            </div>
-        </div>
-        
-        <!-- Admin Dashboard Screen -->
-        <div id="admin-screen" class="screen">
-            <div class="admin-container">
-                <div class="admin-header">
-                    <button id="admin-back">←</button>
-                    <h2>Admin Dashboard</h2>
-                </div>
-                
-                <div class="admin-content">
-                    <div class="admin-stats">
-                        <div class="stat-card">
-                            <h3>Total Users</h3>
-                            <span id="total-users">0</span>
-                        </div>
-                        <div class="stat-card">
-                            <h3>Total Messages</h3>
-                            <span id="total-messages">0</span>
-                        </div>
-                        <div class="stat-card">
-                            <h3>Active Users</h3>
-                            <span id="active-users">0</span>
-                        </div>
-                    </div>
-                    
-                    <div class="admin-section">
-                        <h3>User Management</h3>
-                        <div class="users-list">
-                            <table id="users-table">
-                                <thead>
-                                    <tr>
-                                        <th>Name</th>
-                                        <th>Email</th>
-                                        <th>Status</th>
-                                        <th>Last Seen</th>
-                                        <th>Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="users-table-body"></tbody>
-                            </table>
-                        </div>
-                    </div>
-                    
-                    <div class="admin-section">
-                        <h3>Message Moderation</h3>
-                        <div id="moderation-panel">
-                            <p>Message moderation features will be implemented here.</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
+      </div><div class="grid">
+    <!-- LEFT: Controls -->
+    <div class="panel">
+      <div class="label">API Endpoint</div>
+      <input id="apiUrl" class="input" value="/chat" />
+      <div style="height:12px"></div>
+
+      <div class="label">Enter Query (q)</div>
+      <input id="query" class="input" placeholder="e.g. Tell me a joke" />
+
+      <div style="height:12px"></div>
+
+      <div class="row" style="margin-bottom:12px">
+        <button class="btn" id="sendBtn">Send query</button>
+        <button class="btn ghost" id="copyBtn">Copy URL</button>
+      </div>
+
+      <div class="label">Sample Queries</div>
+      <div class="chips" id="samples">
+        <div class="chip" data-q="Tell me a joke">Tell me a joke</div>
+        <div class="chip" data-q="Give me a fun fact">Fun fact</div>
+        <div class="chip" data-q="Write a short poem about Nairobi">Poem — Nairobi</div>
+        <div class="chip" data-q="Explain quantum computing in simple terms">Explain — quantum</div>
+        <div class="chip" data-q="Generate a startup name for AI tools">Startup name</div>
+      </div>
+
+      <div class="foot">
+        <div>Creator: <strong>Bruce Bera</strong></div>
+        <div style="color:var(--muted);font-size:13px">Status: <span id="statusDot">idle</span></div>
+      </div>
     </div>
 
-    <script src="/socket.io/socket.io.js"></script>
-    <script src="script.js"></script>
-</body>
-    </html>
+    <!-- RIGHT: Results -->
+    <div class="result">
+      <div class="meta">
+        <div style="display:flex;flex-direction:column">
+          <div style="font-weight:700">Response Preview</div>
+          <div style="font-size:12px;color:var(--muted)">Live JSON output from your API</div>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <button class="btn ghost" id="clearBtn">Clear</button>
+          <button class="btn" id="downloadBtn">Download</button>
+        </div>
+      </div>
+
+      <div class="terminal" id="output">{
+
+"creator": "Bruce Bera", "status": 200, "success": true, "message": "Your response will appear here..." }</div>
+
+<div class="glow-border"></div>
+    </div>
+  </div>
+
+</div>
+
+  </div>  <script>
+    const sendBtn = document.getElementById('sendBtn');
+    const copyBtn = document.getElementById('copyBtn');
+    const apiInput = document.getElementById('apiUrl');
+    const queryInput = document.getElementById('query');
+    const output = document.getElementById('output');
+    const samples = document.getElementById('samples');
+    const clearBtn = document.getElementById('clearBtn');
+    const downloadBtn = document.getElementById('downloadBtn');
+    const statusDot = document.getElementById('statusDot');
+
+    function setStatus(text, color){
+      statusDot.textContent = text;
+      statusDot.style.color = color || 'var(--muted)';
+    }
+
+    samples.addEventListener('click', e=>{
+      const chip = e.target.closest('.chip');
+      if(!chip) return;
+      queryInput.value = chip.dataset.q;
+    });
+
+    copyBtn.addEventListener('click', () => {
+      const url = makeUrl();
+      navigator.clipboard.writeText(url).then(()=>{
+        setStatus('copied', 'var(--glow-c1)');
+        copyBtn.textContent = 'Copied!';
+        setTimeout(()=> copyBtn.textContent = 'Copy URL', 1500);
+      });
+    });
+
+    clearBtn.addEventListener('click', ()=>{
+      output.textContent = '{}';
+      setStatus('idle');
+    });
+
+    downloadBtn.addEventListener('click', ()=>{
+      const blob = new Blob([output.textContent], {type:'application/json'});
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'response.json';
+      a.click();
+    });
+
+    function makeUrl(){
+      const base = apiInput.value.trim() || '/chat';
+      const q = encodeURIComponent(queryInput.value.trim() || '');
+      const sep = base.includes('?') ? '&' : '?';
+      return q ? `${base}${sep}q=${q}` : base;
+    }
+
+    sendBtn.addEventListener('click', async ()=>{
+      const url = makeUrl();
+      if(!queryInput.value.trim()){
+        setStatus('enter query', 'var(--danger)');
+        return;
+      }
+      setStatus('loading...', 'var(--glow-c1)');
+      output.textContent = '⏳ Fetching...';
+      try{
+        const res = await fetch(url);
+        const txt = await res.text();
+        try{
+          const json = JSON.parse(txt);
+          output.textContent = JSON.stringify(json, null, 2);
+          setStatus('done', 'var(--success)');
+        }catch(e){
+          // Not JSON
+          output.textContent = txt;
+          setStatus('done', 'var(--success)');
+        }
+      }catch(err){
+        output.textContent = JSON.stringify({creator:'Bruce Bera', status:0, success:false, message: err.message}, null, 2);
+        setStatus('error', 'var(--danger)');
+      }
+    });
+
+    // keyboard shortcut: Enter to send
+    queryInput.addEventListener('keydown', (e)=>{ if(e.key === 'Enter') sendBtn.click(); });
+
+    // initial sample
+    queryInput.value = 'Tell me a short joke';
+  </script></body>
+</html>
