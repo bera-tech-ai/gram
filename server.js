@@ -2,6 +2,7 @@
 import express from "express";
 import path from "path";
 import { fileURLToPath } from "url";
+import OpenAI from "openai";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -9,15 +10,20 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Middleware to parse query & JSON
+// Setup OpenAI client
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY, // Store this in Render's environment vars
+});
+
+// Middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Serve static files (like index.html, css, js)
+// Serve static dashboard
 app.use(express.static(path.join(__dirname, "public")));
 
-// API endpoint
-app.get("/chat", (req, res) => {
+// API endpoint that talks to OpenAI
+app.get("/chat", async (req, res) => {
   const q = req.query.q;
 
   if (!q) {
@@ -29,17 +35,32 @@ app.get("/chat", (req, res) => {
     });
   }
 
-  // Example response
-  res.json({
-    creator: "Bruce Bera",
-    status: 200,
-    success: true,
-    message: `You asked: ${q}`,
-    reply: "This is a sample response from your custom API 🚀",
-  });
+  try {
+    const completion = await openai.chat.completions.create({
+      model: "gpt-4o-mini", // or gpt-4o, gpt-3.5-turbo, etc.
+      messages: [{ role: "user", content: q }],
+    });
+
+    const reply = completion.choices[0].message.content;
+
+    res.json({
+      creator: "Bruce Bera",
+      status: 200,
+      success: true,
+      message: `You asked: ${q}`,
+      reply: reply,
+    });
+  } catch (err) {
+    res.status(500).json({
+      creator: "Bruce Bera",
+      status: 500,
+      success: false,
+      message: err.message,
+    });
+  }
 });
 
-// Fallback: always return index.html for root
+// Root fallback
 app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "public", "index.html"));
 });
