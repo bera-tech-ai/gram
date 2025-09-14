@@ -1,111 +1,228 @@
-<!DOCTYPE html>
+<!DOCTYPE HTML>
+
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Neon API Dashboard</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>BERA API BABSE</title>
   <style>
-    body {
-      margin: 0;
-      font-family: 'Orbitron', sans-serif;
-      background: #0a0a0a;
-      color: #00fff7;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: flex-start;
-      min-height: 100vh;
-      padding: 30px;
+    /* -------------------- Root / Reset -------------------- */
+    :root{
+      --bg:#000006;
+      --panel:#071022;
+      --glow-c1: #00fff7; /* cyan */
+      --glow-c2: #ff3ec6; /* magenta */
+      --glow-c3: #7a5cff; /* purple */
+      --text:#dffcff;
+      --muted:#9bd2d9;
+      --success:#7cffa3;
+      --danger:#ff6b6b;
     }
+    *{box-sizing:border-box}
+    html,body{height:100%;margin:0;font-family:Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial; background: radial-gradient(1200px 600px at 10% 10%, rgba(0,255,247,0.04), transparent), radial-gradient(900px 500px at 90% 90%, rgba(122,92,255,0.03), transparent), var(--bg); color:var(--text);}/* -------------------- Layout -------------------- */
+.wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:48px}
+.card{width:100%;max-width:1100px;background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));border-radius:18px;padding:28px;border:1px solid rgba(255,255,255,0.04);position:relative;overflow:hidden;box-shadow:0 10px 40px rgba(2,6,23,0.7)}
 
-    h1 {
-      font-size: 2.5rem;
-      color: #00f5ff;
-      text-shadow: 0 0 10px #00f5ff, 0 0 20px #00e0ff;
-      margin-bottom: 20px;
-    }
+/* Animated neon beams in background */
+.card::before, .card::after{content:"";position:absolute;inset:0;pointer-events:none}
+.card::before{background:linear-gradient(90deg, transparent, rgba(0,255,247,0.04), transparent);transform:skewX(-12deg) translateX(-25%);filter:blur(20px);animation:slide 8s linear infinite}
+.card::after{background:linear-gradient(120deg, transparent, rgba(122,92,255,0.03), transparent);transform:skewX(8deg) translateX(20%);filter:blur(30px);animation:slide 12s linear infinite reverse}
+@keyframes slide{from{transform:translateX(-30%) skewX(-12deg)} to{transform:translateX(30%) skewX(-12deg)}}
 
-    .card {
-      background: rgba(20, 20, 20, 0.85);
-      border: 2px solid #00f5ff;
-      border-radius: 15px;
-      padding: 20px;
-      max-width: 600px;
-      width: 100%;
-      box-shadow: 0 0 20px #00f5ff77;
-    }
+/* Header */
+.hdr{display:flex;gap:16px;align-items:center;margin-bottom:18px}
+.logo{width:62px;height:62px;border-radius:12px;background:linear-gradient(135deg,var(--glow-c1),var(--glow-c2));display:flex;align-items:center;justify-content:center;color:#001; font-weight:800; font-size:20px;box-shadow:0 6px 30px rgba(0,255,247,0.12), 0 0 30px rgba(255,62,198,0.06)}
+.title{font-size:20px;font-weight:700;line-height:1}
+.subtitle{font-size:12px;color:var(--muted);margin-top:4px}
 
-    input {
-      width: 100%;
-      padding: 12px;
-      border: none;
-      border-radius: 8px;
-      font-size: 1rem;
-      margin-bottom: 15px;
-      outline: none;
-      background: #111;
-      color: #0ff;
-      box-shadow: 0 0 10px #00f5ff66 inset;
-    }
+/* Grid */
+.grid{display:grid;grid-template-columns:1fr 420px;gap:20px}
 
-    button {
-      width: 100%;
-      padding: 12px;
-      font-size: 1rem;
-      font-weight: bold;
-      color: black;
-      background: #00f5ff;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
-      transition: 0.2s;
-    }
+/* Left panel - controls */
+.panel{background:linear-gradient(180deg, rgba(255,255,255,0.015), rgba(255,255,255,0.01));padding:18px;border-radius:12px;border:1px solid rgba(0,255,247,0.06)}
+.label{font-size:12px;color:var(--muted);margin-bottom:8px}
+.input{width:100%;padding:12px;border-radius:10px;border:1px solid rgba(255,255,255,0.04);background:rgba(0,0,0,0.35);color:var(--text);font-size:15px;outline:none}
+.input:focus{box-shadow:0 0 20px rgba(0,255,247,0.06);border-color:var(--glow-c1)}
 
-    button:hover {
-      background: #0ff;
-      box-shadow: 0 0 15px #00f5ff;
-    }
+.row{display:flex;gap:12px;align-items:center}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:12px 14px;border-radius:10px;background:linear-gradient(90deg,var(--glow-c1),var(--glow-c2));color:#001;font-weight:700;cursor:pointer;border:none;box-shadow:0 6px 30px rgba(0,255,247,0.12)}
+.btn.ghost{background:transparent;border:1px solid rgba(255,255,255,0.04);color:var(--muted);font-weight:600}
 
-    pre {
-      background: #050505;
-      padding: 15px;
-      border-radius: 10px;
-      color: #0ff;
-      font-family: monospace;
-      font-size: 0.9rem;
-      overflow-x: auto;
-      box-shadow: 0 0 10px #00f5ff55 inset;
-    }
+.small{font-size:13px}
+
+/* Right panel - results */
+.result{background:linear-gradient(180deg, rgba(0,0,0,0.5), rgba(0,0,0,0.45));padding:16px;border-radius:12px;border:1px solid rgba(122,92,255,0.06);min-height:300px;position:relative}
+.terminal{background:linear-gradient(180deg, rgba(0,0,0,0.6), rgba(255,255,255,0.02));padding:14px;border-radius:8px;height:100%;overflow:auto;color:var(--success);font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, 'Roboto Mono', monospace;font-size:13px}
+.meta{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+
+/* neon border highlight */
+.glow-border{position:absolute;inset:8px;border-radius:10px;pointer-events:none;border:1px solid transparent;background:linear-gradient(90deg, rgba(0,255,247,0.06), rgba(255,62,198,0.04));mix-blend-mode:screen}
+
+/* sample chips */
+.chips{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.chip{padding:8px 10px;border-radius:999px;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.03);cursor:pointer;color:var(--muted);font-size:13px}
+.chip:hover{box-shadow:0 0 10px rgba(122,92,255,0.04);color:var(--text)}
+
+/* footer */
+.foot{margin-top:14px;font-size:12px;color:var(--muted);display:flex;justify-content:space-between;align-items:center}
+
+/* responsive */
+@media (max-width:920px){.grid{grid-template-columns:1fr}.result{min-height:240px}}
+
+/* subtle scanlines in terminal */
+.terminal::before{content:"";position:absolute;left:0;right:0;top:0;bottom:0;background-image:linear-gradient(rgba(255,255,255,0.01) 1px, transparent 1px);background-size:100% 18px;opacity:0.06;pointer-events:none;border-radius:6px}
+
+/* tiny animations */
+.pulse{animation:pulse 2s infinite}
+@keyframes pulse{0%{transform:translateY(0);filter:drop-shadow(0 0 6px rgba(0,255,247,0.08))}50%{transform:translateY(-2px);filter:drop-shadow(0 0 14px rgba(255,62,198,0.08))}100%{transform:translateY(0)}}
+
   </style>
 </head>
 <body>
-  <h1>⚡ Neon API Dashboard</h1>
-  <div class="card">
-    <input id="query" type="text" placeholder="Type your question..." />
-    <button onclick="sendQuery()">Ask API</button>
-    <pre id="response">Waiting for response...</pre>
+  <div class="wrap">
+    <div class="card">
+      <div class="hdr">
+        <div class="logo">BB</div>
+        <div>
+          <div class="title">Bruce Bera — Neon API Tester</div>
+          <div class="subtitle">Check your endpoint, preview responses & share quick samples</div>
+        </div>
+      </div><div class="grid">
+    <!-- LEFT: Controls -->
+    <div class="panel">
+      <div class="label">API Endpoint</div>
+      <input id="apiUrl" class="input" value="/chat" />
+      <div style="height:12px"></div>
+
+      <div class="label">Enter Query (q)</div>
+      <input id="query" class="input" placeholder="e.g. Tell me a joke" />
+
+      <div style="height:12px"></div>
+
+      <div class="row" style="margin-bottom:12px">
+        <button class="btn" id="sendBtn">Send query</button>
+        <button class="btn ghost" id="copyBtn">Copy URL</button>
+      </div>
+
+      <div class="label">Sample Queries</div>
+      <div class="chips" id="samples">
+        <div class="chip" data-q="Tell me a joke">Tell me a joke</div>
+        <div class="chip" data-q="Give me a fun fact">Fun fact</div>
+        <div class="chip" data-q="Write a short poem about Nairobi">Poem — Nairobi</div>
+        <div class="chip" data-q="Explain quantum computing in simple terms">Explain — quantum</div>
+        <div class="chip" data-q="Generate a startup name for AI tools">Startup name</div>
+      </div>
+
+      <div class="foot">
+        <div>Creator: <strong>Bruce Bera</strong></div>
+        <div style="color:var(--muted);font-size:13px">Status: <span id="statusDot">idle</span></div>
+      </div>
+    </div>
+
+    <!-- RIGHT: Results -->
+    <div class="result">
+      <div class="meta">
+        <div style="display:flex;flex-direction:column">
+          <div style="font-weight:700">Response Preview</div>
+          <div style="font-size:12px;color:var(--muted)">Live JSON output from your API</div>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <button class="btn ghost" id="clearBtn">Clear</button>
+          <button class="btn" id="downloadBtn">Download</button>
+        </div>
+      </div>
+
+      <div class="terminal" id="output">{
+
+"creator": "Bruce Bera", "status": 200, "success": true, "message": "Your response will appear here..." }</div>
+
+<div class="glow-border"></div>
+    </div>
   </div>
 
-  <script>
-    async function sendQuery() {
-      const q = document.getElementById("query").value;
-      const resEl = document.getElementById("response");
+</div>
 
-      if (!q) {
-        resEl.textContent = "⚠️ Please enter a question first.";
+  </div>  <script>
+    const sendBtn = document.getElementById('sendBtn');
+    const copyBtn = document.getElementById('copyBtn');
+    const apiInput = document.getElementById('apiUrl');
+    const queryInput = document.getElementById('query');
+    const output = document.getElementById('output');
+    const samples = document.getElementById('samples');
+    const clearBtn = document.getElementById('clearBtn');
+    const downloadBtn = document.getElementById('downloadBtn');
+    const statusDot = document.getElementById('statusDot');
+
+    function setStatus(text, color){
+      statusDot.textContent = text;
+      statusDot.style.color = color || 'var(--muted)';
+    }
+
+    samples.addEventListener('click', e=>{
+      const chip = e.target.closest('.chip');
+      if(!chip) return;
+      queryInput.value = chip.dataset.q;
+    });
+
+    copyBtn.addEventListener('click', () => {
+      const url = makeUrl();
+      navigator.clipboard.writeText(url).then(()=>{
+        setStatus('copied', 'var(--glow-c1)');
+        copyBtn.textContent = 'Copied!';
+        setTimeout(()=> copyBtn.textContent = 'Copy URL', 1500);
+      });
+    });
+
+    clearBtn.addEventListener('click', ()=>{
+      output.textContent = '{}';
+      setStatus('idle');
+    });
+
+    downloadBtn.addEventListener('click', ()=>{
+      const blob = new Blob([output.textContent], {type:'application/json'});
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'response.json';
+      a.click();
+    });
+
+    function makeUrl(){
+      const base = apiInput.value.trim() || '/chat';
+      const q = encodeURIComponent(queryInput.value.trim() || '');
+      const sep = base.includes('?') ? '&' : '?';
+      return q ? `${base}${sep}q=${q}` : base;
+    }
+
+    sendBtn.addEventListener('click', async ()=>{
+      const url = makeUrl();
+      if(!queryInput.value.trim()){
+        setStatus('enter query', 'var(--danger)');
         return;
       }
-
-      resEl.textContent = "⏳ Loading...";
-
-      try {
-        const res = await fetch(`/chat?q=${encodeURIComponent(q)}`);
-        const data = await res.json();
-        resEl.textContent = JSON.stringify(data, null, 2);
-      } catch (err) {
-        resEl.textContent = "❌ Error: " + err.message;
+      setStatus('loading...', 'var(--glow-c1)');
+      output.textContent = '⏳ Fetching...';
+      try{
+        const res = await fetch(url);
+        const txt = await res.text();
+        try{
+          const json = JSON.parse(txt);
+          output.textContent = JSON.stringify(json, null, 2);
+          setStatus('done', 'var(--success)');
+        }catch(e){
+          // Not JSON
+          output.textContent = txt;
+          setStatus('done', 'var(--success)');
+        }
+      }catch(err){
+        output.textContent = JSON.stringify({creator:'Bruce Bera', status:0, success:false, message: err.message}, null, 2);
+        setStatus('error', 'var(--danger)');
       }
-    }
-  </script>
-</body>
+    });
+
+    // keyboard shortcut: Enter to send
+    queryInput.addEventListener('keydown', (e)=>{ if(e.key === 'Enter') sendBtn.click(); });
+
+    // initial sample
+    queryInput.value = 'Tell me a short joke';
+  </script></body>
 </html>
